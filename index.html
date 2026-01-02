@@ -3,109 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat Zenith | Master</title>
+    <title>ZyChat | Evolution</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
-        body { background: #0b0e14; color: #eceff4; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; margin:0; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        #msg-container { height: calc(100vh - 160px); overflow-y: auto; scroll-behavior: smooth; }
         
-        /* Edit/Delete Tools */
-        .btn-action { font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); transition: 0.2s; }
-        .btn-action:hover { background: #5865f2; color: white; }
+        :root { --bg: #080a0f; --panel: rgba(255,255,255,0.03); --accent: #5865f2; }
+        body { background: var(--bg); color: #eceff4; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; }
+        
+        /* Mobile Scoped Layout */
+        #msg-container { height: calc(100vh - 180px); overflow-y: auto; padding-bottom: 20px; }
+        .glass { background: var(--panel); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
+        
+        /* Message Animations */
+        .msg-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 3px solid transparent; }
+        .msg-card.editing { background: rgba(234, 179, 8, 0.1) !important; border-left-color: #eab308; }
+        .msg-card.private { border: 1px solid #ff00ff; background: rgba(255, 0, 255, 0.03) !important; }
+        
+        /* Status Glows */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #23a559; box-shadow: 0 0 10px #23a559; }
+        
+        /* Custom Scrollbar */
+        #msg-container::-webkit-scrollbar { width: 4px; }
+        #msg-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
-        /* Floating Call Button */
-        #call-pill { 
-            position: fixed; top: 15px; left: 50%; transform: translateX(-50%); 
-            z-index: 1000; display: none; background: #23a559; padding: 8px 20px; 
-            border-radius: 50px; font-size: 11px; font-weight: 800; color: white;
-            box-shadow: 0 0 20px rgba(35, 165, 89, 0.4); cursor: pointer;
+        @media (max-width: 640px) {
+            #side-nav { position: fixed; bottom: 0; width: 100%; height: 60px; flex-direction: row; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+            #chat-page { padding-bottom: 60px; }
         }
     </style>
 </head>
-<body class="flex">
+<body class="flex flex-col sm:flex-row">
 
-    <div id="call-pill" onclick="maximizeCall()">● LIVE CALL ACTIVE</div>
-
-    <div id="login-page" class="fixed inset-0 z-[5000] flex items-center justify-center bg-[#0b0e14]">
-        <div class="glass p-10 rounded-[40px] w-full max-w-sm text-center shadow-2xl">
-            <h1 class="text-4xl font-black mb-2 tracking-tighter">ZY<span class="text-[#5865f2]">CHAT</span></h1>
-            <p class="text-[9px] tracking-[5px] text-gray-500 mb-8 uppercase">Zenith Master Terminal</p>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl bg-black/40 border border-white/5 text-white outline-none focus:border-[#5865f2]">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl bg-black/40 border border-white/5 text-white outline-none focus:border-[#5865f2]">
-            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-4 rounded-2xl font-bold hover:scale-[1.02] transition active:scale-95">CONNECT</button>
-            <p id="err" class="text-red-500 text-[10px] mt-6 hidden font-bold tracking-widest uppercase"></p>
+    <div id="login-page" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#080a0f]">
+        <div class="p-8 w-full max-w-xs text-center">
+            <div class="w-20 h-20 bg-[#5865f2] rounded-[30px] mx-auto mb-6 flex items-center justify-center shadow-[0_0_50px_-10px_#5865f2]">
+                <span class="text-3xl font-bold italic">Z</span>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tighter mb-8">ZYCHAT <span class="text-gray-500 font-light">EVO</span></h1>
+            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-3 rounded-2xl glass outline-none focus:border-[#5865f2] transition-all">
+            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-6 rounded-2xl glass outline-none focus:border-[#5865f2] transition-all">
+            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition">INITIALIZE</button>
+            <p id="err" class="text-red-500 text-[10px] mt-4 hidden font-bold tracking-widest uppercase">Invalid Credentials</p>
         </div>
     </div>
 
-    <nav id="side-nav" class="hidden w-20 flex flex-col items-center py-8 border-r border-white/5 bg-[#0b0e14]">
-        <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold mb-8">ZY</div>
-        <button onclick="openCall()" class="w-12 h-12 rounded-2xl glass flex items-center justify-center text-xl hover:bg-green-500/20 transition">📹</button>
-        <button onclick="handleLogout()" class="mt-auto text-gray-700 hover:text-red-500 font-bold text-[10px]">EXIT</button>
+    <div id="status-bar" class="fixed top-0 left-0 right-0 h-1 z-50 bg-gradient-to-r from-transparent via-[#5865f2] to-transparent opacity-50"></div>
+
+    <nav id="side-nav" class="hidden w-20 flex flex-col items-center py-6 glass sm:border-r border-white/5 bg-[#080a0f]">
+        <div class="hidden sm:flex w-12 h-12 bg-[#5865f2] rounded-2xl items-center justify-center font-bold mb-8">ZY</div>
+        <button onclick="openCall()" class="w-12 h-12 rounded-2xl hover:bg-white/5 flex items-center justify-center text-xl">📹</button>
+        <button onclick="handleLogout()" class="sm:mt-auto w-12 h-12 flex items-center justify-center text-gray-500 hover:text-red-500">✕</button>
     </nav>
 
-    <main id="chat-page" class="hidden flex-1 flex flex-col bg-[#0b0e14]">
-        <header class="h-16 flex items-center px-8 border-b border-white/5 glass">
-            <span class="font-bold text-xs tracking-widest text-gray-400"># SYSTEM-GENERAL</span>
+    <main id="chat-page" class="hidden flex-1 flex flex-col relative overflow-hidden">
+        <header class="h-16 flex items-center px-6 justify-between glass border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="status-dot"></div>
+                <span class="text-xs font-bold tracking-widest text-gray-400 uppercase"># Sector-Main</span>
+            </div>
+            <div id="typing-area" class="text-[10px] text-gray-500 italic font-medium"></div>
         </header>
 
-        <div id="msg-container"><div id="msg-box" class="p-8 space-y-6"></div></div>
+        <div id="msg-container">
+            <div id="msg-box" class="p-4 space-y-4"></div>
+        </div>
 
-        <div class="p-6">
-            <div class="glass rounded-3xl flex items-center px-8 border border-white/10">
-                <input id="msg-input" type="text" placeholder="Transmitting..." class="flex-1 bg-transparent py-5 text-sm text-white outline-none">
-                <button onclick="sendMsg()" class="text-[#5865f2] font-black text-xs ml-4">SEND</button>
+        <div class="p-4 glass m-4 rounded-[32px] border border-white/10">
+            <div class="flex items-center gap-3">
+                <input id="msg-input" type="text" placeholder="Message..." class="flex-1 bg-transparent py-3 text-sm outline-none" oninput="updateTyping()">
+                <button onclick="sendMsg()" class="w-10 h-10 bg-[#5865f2] rounded-full flex items-center justify-center shadow-lg shadow-[#5865f244]">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
             </div>
         </div>
     </main>
-
-    <div id="call-overlay" class="fixed inset-0 z-[6000] bg-black hidden">
-        <div class="absolute top-8 left-8 z-[6100] flex gap-4">
-            <button onclick="minimizeCall()" class="glass px-6 py-2 rounded-xl text-[10px] font-bold text-white uppercase">Back to Chat</button>
-            <button onclick="endCall()" class="bg-red-600 px-6 py-2 rounded-xl text-[10px] font-bold text-white uppercase">End Call</button>
-        </div>
-        <div id="jitsi-target" class="w-full h-full"></div>
-    </div>
 
     <script>
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let user = null, allProfiles = [];
+        let user = null, allProfiles = [], editId = null;
 
-        // --- BULLETPROOF LOGIN ---
         async function handleLogin() {
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
-            const err = document.getElementById('err');
-            
-            // Fixed: Fetches as array to stop "Single JSON Object" error
-            const { data, error } = await sb.from('profiles').select('*').ilike('username', n);
-
-            if (data && data.length > 0) {
-                const match = data.find(u => u.password === p);
-                if (match) {
-                    user = { 
-                        name: match.username, 
-                        color: match.color, 
-                        role: match.username === 'admin10783' ? 'admin' : 'user' 
-                    };
-                    localStorage.setItem('zy_session', JSON.stringify(user));
-                    enterApp();
-                } else {
-                    err.innerText = "WRONG PASSWORD"; err.classList.remove('hidden');
-                }
-            } else {
-                err.innerText = "USERNAME NOT FOUND"; err.classList.remove('hidden');
-            }
+            const { data } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p);
+            if (data?.length) {
+                const u = data[0];
+                user = { name: u.username, color: u.color, role: u.username === 'admin10783' ? 'admin' : 'user' };
+                localStorage.setItem('zy_session', JSON.stringify(user));
+                enterApp();
+            } else { document.getElementById('err').classList.remove('hidden'); }
         }
-
-        window.onload = () => {
-            const saved = localStorage.getItem('zy_session');
-            if (saved) { user = JSON.parse(saved); enterApp(); }
-        };
 
         async function enterApp() {
             document.getElementById('login-page').style.display = 'none';
@@ -115,11 +106,12 @@
             allProfiles = data || [];
             loadMsgs();
             sb.channel('db').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
+            sb.channel('typing').on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingDisplay).subscribe();
         }
 
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-            if (data) render(data);
+            render(data || []);
         }
 
         function render(data) {
@@ -127,57 +119,102 @@
             box.innerHTML = data.map(m => {
                 const isMine = m.sender === user.name;
                 const isAdmin = user.role === 'admin';
-                const p = allProfiles.find(ap => ap.username === m.sender);
+                const isPrivate = m.is_private === true;
                 
+                // Privacy Logic: Only show private messages to Sender OR Admin
+                if (isPrivate && !isMine && !isAdmin) return '';
+
+                const p = allProfiles.find(ap => ap.username === m.sender);
+                const colorClass = p?.color || 'text-white';
+
                 return `
-                <div class="msg-item p-4 flex gap-5">
-                    <div class="w-12 h-12 rounded-2xl glass flex-shrink-0 flex items-center justify-center font-bold text-gray-600 border border-white/5 uppercase">${m.sender[0]}</div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between mb-1">
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm font-bold ${p?.color || 'text-white'}">${m.sender}</span>
-                                <span class="text-[9px] text-gray-700 font-bold uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                ${(isMine || isAdmin) ? `
-                                    <button onclick="editMsg(${m.id}, \`${m.content}\`)" class="btn-action text-blue-400">EDIT</button>
-                                    <button onclick="deleteMsg(${m.id})" class="btn-action text-red-500">DEL</button>
-                                ` : ''}
-                            </div>
+                <div id="msg-${m.id}" class="msg-card p-4 rounded-2xl glass group ${isPrivate ? 'private' : ''}">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[13px] font-bold ${colorClass}">${m.sender}</span>
+                            ${isPrivate ? '<span class="text-[8px] bg-pink-500/20 text-pink-500 px-1.5 py-0.5 rounded font-black">PRIVATE</span>' : ''}
+                            <span class="text-[9px] text-gray-600 font-medium">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
-                        <div class="text-sm text-gray-300 leading-relaxed">${m.content}</div>
+                        ${(isMine || isAdmin) ? `
+                            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                                <button onclick="startEdit(${m.id}, \`${m.content}\`)" class="text-xs text-yellow-500/50 hover:text-yellow-500">EDIT</button>
+                                <button onclick="deleteMsg(${m.id})" class="text-xs text-red-500/50 hover:text-red-500">DEL</button>
+                            </div>
+                        ` : ''}
                     </div>
+                    <div id="content-${m.id}" class="text-sm text-gray-300 whitespace-pre-wrap">${m.content}</div>
                 </div>`;
             }).join('');
             document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
         }
 
+        // --- MESSAGE ACTIONS ---
         async function sendMsg() {
             const input = document.getElementById('msg-input');
-            if (!input.value.trim()) return;
-            await sb.from('messages').insert([{ sender: user.name, content: input.value, receiver: 'all' }]);
+            const val = input.value.trim();
+            if (!val) return;
+
+            // Handle Commands
+            if (val === '/server') { alert("Server: ZY-ZENITH-01 | Region: AS-SOUTH"); input.value = ''; return; }
+            if (val.startsWith('/ban ')) { 
+                if (user.role !== 'admin') { alert("Access Denied"); return; }
+                const target = val.split(' ')[1];
+                await sb.from('profiles').update({ is_banned: true }).eq('username', target);
+                alert(`${target} has been banned.`); input.value = ''; return;
+            }
+
+            // Detect Private (starts with @name)
+            const isPrivate = val.startsWith('/p ');
+            const cleanVal = isPrivate ? val.replace('/p ', '') : val;
+
+            if (editId) {
+                await sb.from('messages').update({ content: cleanVal }).eq('id', editId);
+                editId = null;
+            } else {
+                await sb.from('messages').insert([{ sender: user.name, content: cleanVal, is_private: isPrivate }]);
+            }
             input.value = '';
+            setTyping(false);
         }
 
-        async function deleteMsg(id) { if(confirm("Delete message?")) await sb.from('messages').delete().eq('id', id); }
-        async function editMsg(id, old) { const n = prompt("Edit:", old); if(n) await sb.from('messages').update({content: n}).eq('id', id); }
+        function startEdit(id, content) {
+            editId = id;
+            const el = document.getElementById(`msg-${id}`);
+            el.classList.add('editing');
+            const input = document.getElementById('msg-input');
+            input.value = content;
+            input.focus();
+        }
+
+        async function deleteMsg(id) {
+            if (confirm("Delete permanently?")) {
+                await sb.from('messages').delete().eq('id', id);
+                loadMsgs();
+            }
+        }
+
+        // --- TYPING STATUS ---
+        let typingTimeout;
+        async function setTyping(status) {
+            await sb.from('typing_status').upsert({ username: user.name, is_typing: status, last_updated: new Date() });
+        }
+        function updateTyping() {
+            setTyping(true);
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => setTyping(false), 2000);
+        }
+        async function updateTypingDisplay() {
+            const { data } = await sb.from('typing_status').select('*').eq('is_typing', true).neq('username', user.name);
+            const area = document.getElementById('typing-area');
+            if (data?.length) {
+                area.innerText = data.length > 1 ? "Multiple people typing..." : `${data[0].username} is typing...`;
+            } else { area.innerText = ""; }
+        }
+
+        function openCall() { window.open('https://meet.jit.si/ZyZenith_Evo', '_blank'); }
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
-
-        function openCall() {
-            document.getElementById('call-overlay').classList.remove('hidden');
-            document.getElementById('call-pill').style.display = 'block';
-            const t = document.getElementById('jitsi-target');
-            if(!t.innerHTML) t.innerHTML = `<iframe src="https://meet.jit.si/ZyZenith_X99_Main" allow="camera; microphone; fullscreen; autoplay" style="width:100%; height:100%; border:none;"></iframe>`;
-        }
-        function maximizeCall() { document.getElementById('call-overlay').classList.remove('hidden'); }
-        function minimizeCall() { document.getElementById('call-overlay').classList.add('hidden'); }
-        function endCall() { 
-            document.getElementById('call-overlay').classList.add('hidden'); 
-            document.getElementById('call-pill').style.display = 'none'; 
-            document.getElementById('jitsi-target').innerHTML = ''; 
-        }
-        document.getElementById('u-pass').onkeydown = e => { if(e.key === 'Enter') handleLogin(); };
+        window.onload = () => { if (localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-    </html>
+</html>
