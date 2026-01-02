@@ -77,21 +77,36 @@
         let user = null, allProfiles = [];
 
         async function handleLogin() {
-            const n = document.getElementById('u-name').value.trim();
-            const p = document.getElementById('u-pass').value.trim();
-            
-            // FIX: Removed .single() to avoid the "Cannot Coerce" error completely
-            const { data, error } = await sb.from('profiles').select('*').eq('username', n).eq('password', p);
+    const n = document.getElementById('u-name').value.trim();
+    const p = document.getElementById('u-pass').value.trim();
+    const err = document.getElementById('err');
+    
+    // We search for the user by name first (case-insensitive)
+    const { data, error } = await sb
+        .from('profiles')
+        .select('*')
+        .ilike('username', n); 
 
-            if (data && data.length > 0) {
-                const foundUser = data[0];
-                user = { name: foundUser.username, color: foundUser.color, role: foundUser.username === 'admin10783' ? 'admin' : 'user' };
-                localStorage.setItem('zy_session', JSON.stringify(user));
-                enterApp();
-            } else {
-                document.getElementById('err').classList.remove('hidden');
-                document.getElementById('err').innerText = "INVALID CREDENTIALS";
-            }
+    if (data && data.length > 0) {
+        // Find the specific user from the list that matches the password
+        const match = data.find(user => user.password === p);
+        
+        if (match) {
+            user = { 
+                name: match.username, 
+                color: match.color, 
+                role: match.username === 'admin10783' ? 'admin' : 'user' 
+            };
+            localStorage.setItem('zy_session', JSON.stringify(user));
+            enterApp();
+        } else {
+            err.innerText = "WRONG PASSWORD";
+            err.classList.remove('hidden');
+        }
+    } else {
+        err.innerText = "USERNAME NOT FOUND";
+        err.classList.remove('hidden');
+    }
         }
 
         window.onload = () => {
