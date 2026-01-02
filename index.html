@@ -3,133 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat Pro</title>
+    <title>ZyChat | Zenith</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { background: #313338; color: #dbdee1; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
         
-        /* Discord Context Menu */
-        #context-menu {
-            position: fixed; z-index: 10000; width: 180px; background: #111214; 
-            border-radius: 4px; padding: 6px; display: none; box-shadow: 0 8px 16px rgba(0,0,0,0.24);
-        }
-        .menu-item { 
-            padding: 8px 12px; font-size: 14px; border-radius: 2px; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .menu-item:hover { background: #4752c4; color: white; }
-        .menu-item.delete:hover { background: #da373c; }
+        body { background: #0b0e14; color: #eceff4; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; }
+        
+        /* Glass UI */
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        /* Fixed Scroll Area */
+        #msg-container { height: calc(100vh - 140px); overflow-y: auto; scroll-behavior: smooth; }
 
-        .msg-item { border-radius: 4px; transition: background 0.1s; }
-        .msg-item:hover { background: #2e3035; }
-        .editing { background: rgba(250, 166, 26, 0.05) !important; border-left: 2px solid #faa61a; }
-        
-        #call-pill { 
-            position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000;
-            background: #23a559; color: white; padding: 6px 16px; border-radius: 20px;
-            font-size: 11px; font-bold; cursor: pointer; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        /* Discord-style Tooltip */
+        .msg-item { position: relative; border-radius: 8px; transition: 0.2s; }
+        .msg-item:hover { background: rgba(255,255,255,0.03); }
+        .msg-tools { 
+            display: none; position: absolute; right: 10px; top: -12px; 
+            background: #1e1f22; border: 1px solid #444; border-radius: 6px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100;
         }
+        .msg-item:hover .msg-tools { display: flex; }
+
+        /* Call Pill */
+        #call-pill { 
+            position: fixed; top: 12px; left: 50%; transform: translateX(-50%); 
+            z-index: 500; display: none; background: #23a559; padding: 6px 16px; 
+            border-radius: 20px; font-size: 11px; font-weight: 800; color: white;
+            box-shadow: 0 0 20px rgba(35, 165, 89, 0.4); cursor: pointer;
+        }
+
+        #call-overlay { position: fixed; inset: 0; z-index: 1000; background: #000; display: none; }
     </style>
 </head>
 <body class="flex">
 
-    <div id="context-menu" class="glass">
-        <div class="menu-item" onclick="startEdit()">Edit Message <span class="opacity-50 text-[10px]">UP</span></div>
-        <div class="menu-item delete" onclick="confirmDelete()" style="color: #fa777c;">Delete Message</div>
-    </div>
+    <div id="call-pill" onclick="maximizeCall()">● CALL ACTIVE (TAP TO VIEW)</div>
 
-    <div id="call-pill" onclick="maximizeCall()">● VOICE CALL ACTIVE</div>
-
-    <div id="login-page" class="fixed inset-0 z-[5000] bg-[#313338] flex items-center justify-center">
-        <div class="w-80 text-center">
-            <h1 class="text-3xl font-bold mb-6">ZYCHAT</h1>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-3 bg-[#1e1f22] rounded mb-3 outline-none">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 bg-[#1e1f22] rounded mb-6 outline-none">
-            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold">Log In</button>
+    <div id="login-page" class="fixed inset-0 z-[2000] flex items-center justify-center bg-[#0b0e14]">
+        <div class="glass p-10 rounded-3xl shadow-2xl w-full max-w-sm text-center">
+            <h1 class="text-4xl font-bold mb-2 tracking-tighter">ZY<span class="text-[#5865f2]">CHAT</span></h1>
+            <p class="text-gray-500 text-xs mb-8 uppercase tracking-widest">Secure Terminal</p>
+            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-xl bg-black/40 border border-white/5 outline-none focus:border-[#5865f2] text-white">
+            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-6 rounded-xl bg-black/40 border border-white/5 outline-none focus:border-[#5865f2] text-white">
+            <button id="login-btn" onclick="handleLogin()" class="w-full bg-[#5865f2] p-4 rounded-xl font-bold hover:scale-[1.02] transition active:scale-95">LOG IN</button>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden italic"></p>
         </div>
     </div>
 
-    <div id="chat-page" class="hidden flex-1 flex flex-col">
-        <header class="h-12 border-b border-black/20 flex items-center px-4 font-bold shadow-sm"># general</header>
-        <div id="msg-container" class="flex-1 overflow-y-auto p-4 space-y-1">
-            <div id="msg-box"></div>
-        </div>
-        <div class="p-4 bg-[#313338]">
-            <div class="bg-[#383a40] rounded-lg px-4 py-3">
-                <input id="msg-input" type="text" placeholder="Message #general" class="w-full bg-transparent outline-none text-sm">
+    <nav id="side-nav" class="hidden w-20 flex flex-col items-center py-6 border-r border-white/5 bg-[#0b0e14]">
+        <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold mb-8 shadow-lg shadow-[#5865f2]/20">ZY</div>
+        <button onclick="openCall()" class="w-12 h-12 rounded-2xl glass flex items-center justify-center text-xl hover:bg-green-500/20 transition">📹</button>
+        <button onclick="handleLogout()" class="mt-auto text-gray-600 hover:text-red-500 font-bold text-[10px]">EXIT</button>
+    </nav>
+
+    <main id="chat-page" class="hidden flex-1 flex flex-col bg-[#0b0e14]">
+        <header class="h-16 flex items-center px-6 border-b border-white/5 justify-between glass">
+            <div class="font-bold text-sm tracking-widest"># GENERAL-SYSTEM</div>
+            <div id="online-indicator" class="text-[10px] text-green-500 font-bold flex items-center gap-2">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> SYSTEM ONLINE
             </div>
-            <div id="edit-info" class="hidden text-[10px] mt-2 text-gray-400">
-                Editing message — <span onclick="cancelEdit()" class="text-[#00a8fc] cursor-pointer hover:underline">cancel</span>
+        </header>
+
+        <div id="msg-container">
+            <div id="msg-box" class="p-6 space-y-6"></div>
+        </div>
+
+        <div id="typing-ui" class="px-6 h-4 text-[10px] text-gray-500 italic hidden"></div>
+
+        <div class="p-4 bg-[#0b0e14]">
+            <div class="glass rounded-2xl flex items-center px-6 border border-white/10">
+                <input id="msg-input" type="text" placeholder="Send message..." class="flex-1 bg-transparent border-none outline-none py-4 text-sm">
+                <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-4">SEND</button>
             </div>
         </div>
+    </main>
+
+    <div id="call-overlay">
+        <div class="absolute top-6 left-6 z-[1100] flex gap-3">
+            <button onclick="minimizeCall()" class="glass px-6 py-2 rounded-xl text-xs font-bold">MINIMIZE</button>
+            <button onclick="endCall()" class="bg-red-600 px-6 py-2 rounded-xl text-xs font-bold">END CALL</button>
+        </div>
+        <div id="jitsi-target" class="w-full h-full"></div>
     </div>
 
     <script>
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let user = null, allProfiles = [], selectedMsg = null, isEditing = false;
+        const ROOM = "ZyZenith_X_9921";
+        let user = null, allProfiles = [], typingTimeout;
 
         window.onload = () => {
             const saved = localStorage.getItem('zy_session');
             if (saved) { user = JSON.parse(saved); enterApp(); }
         };
 
+        // --- FIXED LOGIN ---
         async function handleLogin() {
-    const n = document.getElementById('u-name').value.trim();
-    const p = document.getElementById('u-pass').value.trim();
-    const errBox = document.getElementById('err');
+            const btn = document.getElementById('login-btn');
+            const n = document.getElementById('u-name').value.trim();
+            const p = document.getElementById('u-pass').value.trim();
+            const err = document.getElementById('err');
+            
+            btn.innerText = "AUTHENTICATING...";
+            err.classList.add('hidden');
 
-    // 1. First, check if the user exists at all
-    const { data: userCheck, error: userError } = await sb
-        .from('profiles')
-        .select('*')
-        .ilike('username', n) // ilike makes it not care about Capital Letters
-        .single();
+            const { data, error } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p).single();
 
-    if (userError || !userCheck) {
-        errBox.innerText = "❌ User not found in database.";
-        errBox.classList.remove('hidden');
-        return;
-    }
-
-    // 2. If user exists, check the password
-    if (userCheck.password !== p) {
-        errBox.innerText = "❌ Incorrect password.";
-        errBox.classList.remove('hidden');
-        return;
-    }
-
-    // 3. Check if banned
-    if (userCheck.is_banned) {
-        errBox.innerText = "🚫 This account is banned.";
-        errBox.classList.remove('hidden');
-        return;
-    }
-
-    // Success!
-    user = { 
-        name: userCheck.username, 
-        color: userCheck.color, 
-        role: userCheck.username === 'admin10783' ? 'admin' : 'user' 
-    };
-    localStorage.setItem('zy_session', JSON.stringify(user));
-    enterApp();
-        }
+            if (data) {
+                if(data.is_banned) { err.innerText = "ACCESS DENIED: BANNED"; err.classList.remove('hidden'); btn.innerText="LOG IN"; return; }
+                user = { name: data.username, color: data.color, role: data.username === 'admin10783' ? 'admin' : 'user' };
+                localStorage.setItem('zy_session', JSON.stringify(user));
+                enterApp();
+            } else {
+                err.innerText = "INVALID CREDENTIALS";
+                err.classList.remove('hidden');
+                btn.innerText = "LOG IN";
             }
         }
 
         async function enterApp() {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('chat-page').classList.remove('hidden');
+            document.getElementById('side-nav').classList.remove('hidden');
             const { data } = await sb.from('profiles').select('username, color');
             allProfiles = data;
-            loadMsgs();
-            listen();
+            loadMsgs(); listen(); setupTyping();
         }
 
+        function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
+
+        // --- MESSAGE LOGIC ---
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
             if (data) render(data);
@@ -138,73 +145,73 @@
         function render(data) {
             const box = document.getElementById('msg-box');
             box.innerHTML = data.map(m => {
+                const isMine = m.sender === user.name;
+                const isAdmin = user.role === 'admin';
+                const isPrivate = m.receiver !== 'all';
+                if (isPrivate && !isMine && m.receiver !== user.name && !isAdmin) return '';
+                
                 const p = allProfiles.find(ap => ap.username === m.sender);
+                const color = p ? p.color : 'text-gray-400';
+
                 return `
-                <div class="msg-item p-1 px-4 flex flex-col group" oncontextmenu="showMenu(event, ${m.id}, '${m.sender}', \`${m.content}\`)">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-sm ${p?.color || 'text-white'}">${m.sender}</span>
-                        <span class="text-[10px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                <div class="msg-item p-2 group">
+                    <div class="msg-tools flex">
+                        ${(isMine || isAdmin) ? `
+                        <button onclick="editMsg(${m.id}, \`${m.content}\`)" class="p-2 text-blue-400 text-xs font-bold hover:bg-white/5">EDIT</button>
+                        <button onclick="deleteMsg(${m.id})" class="p-2 text-red-500 text-xs font-bold hover:bg-white/5">DEL</button>
+                        ` : ''}
                     </div>
-                    <div class="text-sm text-gray-300 ml-0">${m.content}</div>
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-xl glass flex-shrink-0 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-sm font-bold ${color}">${m.sender}</span>
+                                <span class="text-[9px] text-gray-600 font-bold">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div class="text-sm text-gray-300">${m.content}</div>
+                        </div>
+                    </div>
                 </div>`;
             }).join('');
-            if(!isEditing) document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
+            document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
         }
 
-        // --- DISCORD CONTEXT MENU ---
-        function showMenu(e, id, sender, content) {
-            e.preventDefault();
-            if (sender !== user.name && user.role !== 'admin') return;
-            selectedMsg = { id, content };
-            const menu = document.getElementById('context-menu');
-            menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
-        }
-
-        document.onclick = () => document.getElementById('context-menu').style.display = 'none';
-
-        function startEdit() {
-            isEditing = true;
+        async function sendMsg() {
             const input = document.getElementById('msg-input');
-            input.value = selectedMsg.content;
-            input.focus();
-            document.getElementById('edit-info').classList.remove('hidden');
+            let content = input.value.trim(); if (!content) return;
+            let target = 'all', sender = user.name;
+            if (user.role === 'admin' && content.startsWith('/server ')) { sender = 'SYSTEM'; content = content.replace('/server ', '').toUpperCase(); }
+            if (content.startsWith('@')) target = content.split(' ')[0].substring(1);
+            input.value = '';
+            await sb.from('messages').insert([{ sender, content, receiver: target }]);
         }
 
-        async function confirmDelete() {
-            if(confirm("Delete Message?")) await sb.from('messages').delete().eq('id', selectedMsg.id);
-        }
-
-        function cancelEdit() {
-            isEditing = false;
-            document.getElementById('msg-input').value = '';
-            document.getElementById('edit-info').classList.add('hidden');
-        }
-
-        // --- KEYBOARD SHORTCUTS ---
-        document.getElementById('msg-input').onkeydown = async (e) => {
-            if (e.key === 'Enter') {
-                const val = e.target.value.trim();
-                if (!val) return;
-                if (isEditing) {
-                    await sb.from('messages').update({ content: val }).eq('id', selectedMsg.id);
-                    cancelEdit();
-                } else {
-                    await sb.from('messages').insert([{ sender: user.name, content: val, receiver: 'all' }]);
-                    e.target.value = '';
-                }
-            }
-            // UP ARROW TO EDIT LAST MESSAGE
-            if (e.key === 'ArrowUp' && e.target.value === '') {
-                const myMsgs = Array.from(document.querySelectorAll('.msg-item'));
-                // Logic to find last message and trigger edit (simplified)
-                alert("Use Right-Click to Edit for now, Up-Arrow logic syncing...");
-            }
-            if (e.key === 'Escape') cancelEdit();
-        };
+        // --- TOOLS ---
+        async function deleteMsg(id) { if(confirm("Delete?")) await sb.from('messages').delete().eq('id', id); }
+        async function editMsg(id, old) { const n = prompt("Edit:", old); if(n && n !== old) await sb.from('messages').update({content: n}).eq('id', id); }
 
         function listen() { sb.channel('zy').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
+
+        function setupTyping() {
+            const input = document.getElementById('msg-input');
+            const ui = document.getElementById('typing-ui');
+            input.oninput = () => { sb.channel('typing').send({ type: 'broadcast', event: 't', payload: { u: user.name }}); };
+            sb.channel('typing').on('broadcast', { event: 't' }, (p) => {
+                if (p.payload.u !== user.name) {
+                    ui.innerText = `${p.payload.u} is typing...`;
+                    ui.classList.remove('hidden');
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => ui.classList.add('hidden'), 2000);
+                }
+            }).subscribe();
+        }
+
+        // --- CALLS ---
+        function openCall() { document.getElementById('call-overlay').style.display = 'block'; document.getElementById('call-pill').style.display = 'block'; const t = document.getElementById('jitsi-target'); if(!t.innerHTML) t.innerHTML = `<iframe src="https://meet.jit.si/${ROOM}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen; autoplay"></iframe>`; }
+        function maximizeCall() { document.getElementById('call-overlay').style.display = 'block'; }
+        function minimizeCall() { document.getElementById('call-overlay').style.display = 'none'; }
+        function endCall() { document.getElementById('call-overlay').style.display = 'none'; document.getElementById('call-pill').style.display = 'none'; document.getElementById('jitsi-target').innerHTML = ''; }
+        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
 </html>
