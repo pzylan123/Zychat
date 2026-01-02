@@ -7,64 +7,58 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        html, body { position: fixed; overflow: hidden; width: 100%; height: 100%; font-family: 'Inter', sans-serif; background-color: #1e1f22; }
-        #chat-page { display: flex; height: 100%; width: 100%; }
-        #msg-container { position: relative; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background-color: #313338; }
-        #msg-box { padding: 1rem; display: flex; flex-direction: column; min-height: min-content; }
-        .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; }
-        iframe { width: 100%; height: 320px; border: none; background: #000; }
-        .private-msg { border-left: 3px solid #f472b6; background: rgba(244, 114, 182, 0.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html, body { position: fixed; overflow: hidden; width: 100%; height: 100%; font-family: 'Inter', sans-serif; background-color: #1e1f22; color: #dbdee1; }
+        .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 12px; }
+        #msg-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background-color: #313338; }
+        #call-overlay { position: fixed; inset: 0; z-index: 200; background: #000; display: none; }
+        #call-overlay iframe { width: 100%; height: 100%; border: none; }
+        .msg-item:hover .msg-tools { display: flex; }
+        .server-msg { background: rgba(255, 255, 255, 0.05); border-left: 4px solid #fff; padding: 10px; margin: 5px 0; font-family: monospace; }
+        .private-msg { background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865f2; }
     </style>
 </head>
-<body>
+<body class="flex">
 
-    <div id="login-page" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e1f22] p-6">
-        <div class="bg-[#313338] p-8 rounded-lg shadow-2xl w-full max-w-sm border border-white/5 text-center">
-            <h2 class="text-2xl font-bold text-white mb-6">ZyChat</h2>
-            <div class="space-y-4 text-left">
-                <input id="u-name" type="text" placeholder="Username" class="w-full p-3 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
-                <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
-                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white">Log In</button>
-            </div>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden italic">Access Denied.</p>
+    <div id="login-page" class="fixed inset-0 z-[300] flex items-center justify-center bg-[#1e1f22]">
+        <div class="bg-[#313338] p-8 rounded-lg shadow-2xl w-80 border border-white/5">
+            <h2 class="text-2xl font-bold text-white text-center mb-6">ZyChat</h2>
+            <input id="u-name" type="text" placeholder="Username" class="w-full p-3 mb-4 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
+            <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 mb-6 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
+            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white hover:bg-[#4752c4]">Log In</button>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Access Denied.</p>
         </div>
     </div>
 
-    <div id="chat-page" class="hidden">
-        <div class="sidebar flex flex-col items-center py-4 space-y-4">
-            <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white">ZY</div>
-            <button onclick="startCall()" class="w-12 h-12 bg-[#2b2d31] rounded-full flex items-center justify-center hover:bg-green-600 transition-all text-xl">📹</button>
-            <button onclick="handleLogout()" class="mt-auto mb-4 text-gray-500 hover:text-red-400 text-[10px] font-bold">LOGOUT</button>
+    <div id="call-overlay">
+        <div class="absolute top-4 left-4 z-[210] flex gap-2">
+            <button onclick="minimizeCall()" class="bg-gray-900/90 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest">Chat</button>
+            <button onclick="endCall()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest">End Call</button>
+        </div>
+        <div id="jitsi-target" class="w-full h-full"></div>
+    </div>
+
+    <div id="side-nav" class="sidebar hidden">
+        <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white text-xl">ZY</div>
+        <div class="w-8 h-[2px] bg-white/10 rounded"></div>
+        <button onclick="openCall()" class="w-12 h-12 bg-[#2b2d31] rounded-full flex items-center justify-center hover:bg-green-600 transition-all text-xl">📹</button>
+        <button onclick="handleLogout()" class="mt-auto text-gray-500 hover:text-red-400 font-bold text-[10px] uppercase">Logout</button>
+    </div>
+
+    <div id="chat-page" class="hidden flex-1 flex flex-col min-w-0">
+        <header class="h-12 flex items-center px-4 bg-[#313338] border-b border-black/20 justify-between">
+            <div class="font-bold text-sm"># general</div>
+            <div id="call-status" onclick="maximizeCall()" class="hidden cursor-pointer bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[10px] font-bold animate-pulse">● LIVE CALL ACTIVE</div>
+        </header>
+
+        <div id="msg-container">
+            <div id="msg-box" class="p-4 space-y-4"></div>
         </div>
 
-        <div class="flex-1 flex flex-col min-w-0">
-            <header class="h-12 flex items-center px-4 bg-[#313338] border-b border-black/20 justify-between flex-shrink-0">
-                <div class="font-bold text-white text-sm"><span class="text-gray-500">#</span> general</div>
-                <span id="display-name" class="text-xs font-semibold text-gray-400"></span>
-            </header>
-
-            <div id="video-container" class="hidden flex-shrink-0">
-                <div class="bg-black p-1 flex justify-between items-center text-[10px] font-bold">
-                    <span class="text-green-500 pl-2 uppercase tracking-widest">● Secure Audio/Video Active</span>
-                    <div class="flex gap-2 pr-2">
-                        <button onclick="refreshCall()" class="text-blue-400 hover:underline">REFRESH STREAM</button>
-                        <button onclick="closeCall()" class="text-red-500">DISCONNECT</button>
-                    </div>
-                </div>
-                <div id="iframe-holder"></div>
-            </div>
-
-            <div id="msg-container">
-                <div id="msg-box"></div>
-            </div>
-
-            <div class="p-4 bg-[#313338] flex-shrink-0">
-                <div class="bg-[#383a40] rounded-lg flex items-center px-4">
-                    <input id="msg-input" type="text" placeholder="Message or @name..." class="flex-1 bg-transparent border-none outline-none py-3 text-gray-200 text-sm">
-                    <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-2">Send</button>
-                </div>
-                <div class="text-[9px] text-gray-500 mt-1 pl-1">Tip: Use @Name for private messages</div>
+        <div class="p-4 bg-[#313338]">
+            <div class="bg-[#383a40] rounded-lg flex items-center px-4">
+                <input id="msg-input" type="text" placeholder="Message..." class="flex-1 bg-transparent border-none outline-none py-3 text-sm">
+                <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-2">Send</button>
             </div>
         </div>
     </div>
@@ -73,30 +67,21 @@
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-
-        const USERS = {
-            "admin10783": { p: "Px9#kL2Zq", color: "text-red-400" },
-            "Mohit_Vish": { p: "vB7$mN1pX", color: "text-blue-400" },
-            "Ansh": { p: "tY4@rE9wQ", color: "text-green-400" },
-            "Mohit_Jha": { p: "zS2!dF8gH", color: "text-purple-400" },
-            "Eklavya": { p: "uJ5*kN3mP", color: "text-yellow-400" },
-            "Arth": { p: "aW1&qZ7xV", color: "text-pink-400" }
-        };
-
         const STATIC_ROOM = "ZyChat_Global_Secure_Room_V3";
         let user = null;
 
+        // --- AUTH & AUTO LOGIN ---
         window.onload = () => {
             const saved = localStorage.getItem('zy_session');
             if (saved) { user = JSON.parse(saved); enterApp(); }
         };
 
-        function handleLogin() {
+        async function handleLogin() {
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
-            const found = Object.keys(USERS).find(u => u.toLowerCase() === n.toLowerCase());
-            if (found && USERS[found].p === p) {
-                user = { name: found };
+            const { data } = await sb.from('profiles').select('*').eq('username', n).eq('password', p).single();
+            if (data && !data.is_banned) {
+                user = { name: data.username, color: data.color, role: data.username === 'admin10783' ? 'admin' : 'user' };
                 localStorage.setItem('zy_session', JSON.stringify(user));
                 enterApp();
             } else { document.getElementById('err').classList.remove('hidden'); }
@@ -105,48 +90,58 @@
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
 
         function enterApp() {
-            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('login-page').style.display = 'none';
             document.getElementById('chat-page').classList.remove('hidden');
-            document.getElementById('display-name').innerText = user.name;
-            loadMsgs();
-            listen();
+            document.getElementById('side-nav').classList.remove('hidden');
+            loadMsgs(); listen();
         }
 
-        async function loadMsgs() {
-            const { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-            if (!error) {
-                // PRIVATE MESSAGE FILTERING LOGIC
-                const filtered = data.filter(m => {
-                    if (m.receiver === 'all') return true;
-                    if (m.sender === user.name) return true; // Show my own private messages
-                    if (m.receiver.toLowerCase() === user.name.toLowerCase()) return true; // Show pms sent to me
-                    return false;
-                });
-                render(filtered);
+        // --- MESSAGE TOOLS (EDIT/DELETE) ---
+        async function deleteMsg(id) {
+            if (confirm("Delete this message?")) {
+                await sb.from('messages').delete().eq('id', id);
             }
+        }
+
+        async function editMsg(id, oldContent) {
+            const newContent = prompt("Edit message:", oldContent);
+            if (newContent && newContent !== oldContent) {
+                await sb.from('messages').update({ content: newContent }).eq('id', id);
+            }
+        }
+
+        // --- CHAT LOGIC ---
+        async function loadMsgs() {
+            const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
+            if (data) render(data);
         }
 
         function render(data) {
             const box = document.getElementById('msg-box');
             box.innerHTML = data.map(m => {
-                const color = USERS[m.sender]?.color || "text-gray-400";
+                const isMine = m.sender === user.name;
+                const isAdmin = user.role === 'admin';
+                const isServer = m.sender === 'SYSTEM';
                 const isPrivate = m.receiver !== 'all';
-                let content = m.content;
-                if (content.includes("https://meet.jit.si/")) {
-                    content = `<button onclick="startCall()" class="bg-[#248046] px-4 py-2 rounded text-[10px] font-bold text-white mt-1">JOIN LIVE CHANNEL</button>`;
-                }
+                
+                // Privacy Filter
+                if (isPrivate && !isMine && m.receiver !== user.name && !isAdmin) return '';
 
                 return `
-                <div class="mb-4 flex gap-3 ${isPrivate ? 'private-msg p-2 rounded' : ''}">
+                <div class="relative group msg-item flex gap-3 ${isServer ? 'server-msg' : ''} ${isPrivate ? 'private-msg' : ''}">
                     <div class="w-10 h-10 rounded bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
-                    <div>
+                    <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm ${color}">${m.sender}</span>
-                            <span class="text-[9px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            ${isPrivate ? '<span class="text-[8px] bg-pink-900/40 text-pink-400 px-1 rounded uppercase font-bold">Private</span>' : ''}
+                            <span class="font-bold text-sm text-white">${m.sender}</span>
+                            <span class="text-[9px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
-                        <div class="text-sm text-gray-300 mt-0.5">${content}</div>
+                        <div class="text-sm text-gray-300">${m.content}</div>
                     </div>
+                    ${(isMine || isAdmin) ? `
+                    <div class="msg-tools hidden absolute right-0 top-0 bg-[#1e1f22] rounded shadow-lg border border-white/10 p-1 gap-2">
+                        <button onclick="editMsg(${m.id}, '${m.content}')" class="text-[10px] hover:text-blue-400 px-1">EDIT</button>
+                        <button onclick="deleteMsg(${m.id})" class="text-[10px] hover:text-red-400 px-1">DEL</button>
+                    </div>` : ''}
                 </div>`;
             }).join('');
             document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
@@ -156,43 +151,47 @@
             const input = document.getElementById('msg-input');
             let content = input.value.trim();
             if (!content) return;
-
+            
             let target = 'all';
-            if (content.startsWith('@')) {
-                const parts = content.split(' ');
-                const mentioned = parts[0].substring(1);
-                const match = Object.keys(USERS).find(u => u.toLowerCase() === mentioned.toLowerCase());
-                if (match) {
-                    target = match;
-                    content = content.replace(parts[0], `<span class="text-blue-400">@${match}</span>`);
+            let sender = user.name;
+
+            if (user.role === 'admin') {
+                if (content.startsWith('/server ')) { sender = 'SYSTEM'; content = content.replace('/server ', '').toUpperCase(); }
+                else if (content.startsWith('/ban ')) {
+                    const victim = content.replace('/ban ', '');
+                    await sb.from('profiles').update({ is_banned: true }).eq('username', victim);
+                    content = `🚫 USER ${victim} HAS BEEN BANNED.`; sender = 'SYSTEM';
                 }
             }
 
+            if (content.startsWith('@')) {
+                const parts = content.split(' ');
+                target = parts[0].substring(1);
+            }
+
             input.value = '';
-            await sb.from('messages').insert([{ sender: user.name, content: content, receiver: target }]);
+            await sb.from('messages').insert([{ sender, content, receiver: target }]);
         }
 
-        function listen() { sb.channel('zy').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
+        function listen() { sb.channel('zy').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
 
-        // --- IMPROVED CALL LOGIC ---
-        function startCall() {
-            document.getElementById('video-container').classList.remove('hidden');
-            refreshCall();
-            sb.from('messages').insert([{ sender: user.name, content: `📞 Join call: https://meet.jit.si/${STATIC_ROOM}`, receiver: 'all' }]);
+        // --- CALL LOGIC (PERSISTENT BACKGROUND) ---
+        function openCall() {
+            document.getElementById('call-overlay').style.display = 'block';
+            document.getElementById('call-status').classList.remove('hidden');
+            const target = document.getElementById('jitsi-target');
+            if(!target.innerHTML) {
+                target.innerHTML = `<iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true" allow="camera; microphone; fullscreen; autoplay"></iframe>`;
+            }
         }
-
-        function refreshCall() {
-            const holder = document.getElementById('iframe-holder');
-            // Background Audio + Ad-refresh logic
-            holder.innerHTML = `<iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.backgroundAlpha=0&config.startWithAudioMuted=false" allow="camera; microphone; fullscreen; autoplay"></iframe>`;
+        function minimizeCall() { document.getElementById('call-overlay').style.display = 'none'; }
+        function maximizeCall() { document.getElementById('call-overlay').style.display = 'block'; }
+        function endCall() {
+            document.getElementById('call-overlay').style.display = 'none';
+            document.getElementById('call-status').classList.add('hidden');
+            document.getElementById('jitsi-target').innerHTML = '';
         }
-
-        function closeCall() {
-            document.getElementById('video-container').classList.add('hidden');
-            document.getElementById('iframe-holder').innerHTML = '';
-        }
-
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-</html>
+    </html>
