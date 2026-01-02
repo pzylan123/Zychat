@@ -78,13 +78,46 @@
         };
 
         async function handleLogin() {
-            const n = document.getElementById('u-name').value.trim();
-            const p = document.getElementById('u-pass').value.trim();
-            const { data } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p).single();
-            if (data) {
-                user = { name: data.username, color: data.color, role: data.username === 'admin10783' ? 'admin' : 'user' };
-                localStorage.setItem('zy_session', JSON.stringify(user));
-                enterApp();
+    const n = document.getElementById('u-name').value.trim();
+    const p = document.getElementById('u-pass').value.trim();
+    const errBox = document.getElementById('err');
+
+    // 1. First, check if the user exists at all
+    const { data: userCheck, error: userError } = await sb
+        .from('profiles')
+        .select('*')
+        .ilike('username', n) // ilike makes it not care about Capital Letters
+        .single();
+
+    if (userError || !userCheck) {
+        errBox.innerText = "❌ User not found in database.";
+        errBox.classList.remove('hidden');
+        return;
+    }
+
+    // 2. If user exists, check the password
+    if (userCheck.password !== p) {
+        errBox.innerText = "❌ Incorrect password.";
+        errBox.classList.remove('hidden');
+        return;
+    }
+
+    // 3. Check if banned
+    if (userCheck.is_banned) {
+        errBox.innerText = "🚫 This account is banned.";
+        errBox.classList.remove('hidden');
+        return;
+    }
+
+    // Success!
+    user = { 
+        name: userCheck.username, 
+        color: userCheck.color, 
+        role: userCheck.username === 'admin10783' ? 'admin' : 'user' 
+    };
+    localStorage.setItem('zy_session', JSON.stringify(user));
+    enterApp();
+        }
             }
         }
 
