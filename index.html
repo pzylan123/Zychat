@@ -3,59 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZyChat</title>
+    <title>ZyChat | Private Server</title>
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #313338; }
+        .sidebar { background-color: #1e1f22; }
+        .chat-area { background-color: #313338; }
+        .member-list { background-color: #2b2d31; }
         .admin-only { display: none; }
         .is-admin .admin-only { display: block; }
-        #video-container iframe { width: 100%; height: 350px; border-radius: 12px; border: 2px solid #1e293b; }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        iframe { width: 100%; height: 300px; border-radius: 8px; border: none; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #2b2d31; }
+        ::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-900 text-white font-sans overflow-hidden">
+<body class="text-gray-200 overflow-hidden">
 
-    <div id="login-page" class="flex items-center justify-center min-h-screen p-6">
-        <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-700">
-            <h2 class="text-3xl font-bold mb-2 text-center text-blue-400">Secure Entry</h2>
-            <p class="text-slate-400 text-center mb-8 text-sm">ZyChat Private Server</p>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-xl bg-slate-900 border border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-6 rounded-xl bg-slate-900 border border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-xl font-bold hover:bg-blue-500 transition">Login</button>
-            <p id="err" class="text-red-400 text-sm mt-4 hidden text-center">Unauthorized Access</p>
+    <div id="login-page" class="flex items-center justify-center min-h-screen bg-[#1e1f22] p-6">
+        <div class="bg-[#313338] p-10 rounded-lg shadow-2xl w-full max-w-md border border-[#1e1f22]">
+            <h2 class="text-2xl font-bold mb-2 text-center text-white">Welcome Back!</h2>
+            <p class="text-gray-400 text-center mb-8 text-sm">We're so excited to see you again!</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Username</label>
+                    <input id="u-name" type="text" class="w-full p-3 mt-1 rounded bg-[#1e1f22] border-none outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Password</label>
+                    <input id="u-pass" type="password" class="w-full p-3 mt-1 rounded bg-[#1e1f22] border-none outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold hover:bg-[#4752c4] transition text-white mt-4">Log In</button>
+            </div>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center">Invalid login credentials.</p>
         </div>
     </div>
 
-    <div id="chat-page" class="hidden flex flex-col h-screen max-h-screen">
-        <header class="p-4 bg-slate-800/80 backdrop-blur-md border-b border-slate-700 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div id="my-avatar" class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold shadow-lg">?</div>
-                <div>
-                    <p id="display-name" class="font-bold leading-none"></p>
-                    <span class="text-[9px] text-green-400 uppercase">Encrypted Connection</span>
+    <div id="chat-page" class="hidden flex h-screen">
+        
+        <div class="sidebar w-16 md:w-20 flex flex-col items-center py-4 space-y-4 border-r border-black/20">
+            <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white shadow-lg cursor-pointer hover:rounded-xl transition-all">ZY</div>
+            <div class="w-12 h-0.5 bg-gray-700 rounded-full mx-auto"></div>
+            <button onclick="startCall()" class="w-12 h-12 bg-[#2b2d31] rounded-3xl flex items-center justify-center hover:bg-[#23a559] hover:rounded-xl transition-all text-green-500 hover:text-white">📹</button>
+        </div>
+
+        <div class="flex-1 flex flex-col">
+            <header class="h-12 flex items-center px-4 shadow-md bg-[#313338] border-b border-black/20 justify-between">
+                <div class="flex items-center font-bold text-white">
+                    <span class="text-gray-500 text-2xl mr-2">#</span> general
                 </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="startCall()" class="bg-slate-700 p-2 rounded-full hover:bg-slate-600 transition">📹</button>
-                <button onclick="location.reload()" class="bg-slate-700 p-2 rounded-full hover:bg-red-900 transition">Logout</button>
-            </div>
-        </header>
+                <div class="flex items-center gap-4">
+                    <span id="display-name" class="text-sm font-semibold text-gray-300"></span>
+                    <button onclick="location.reload()" class="text-xs text-gray-400 hover:text-red-400 uppercase font-bold tracking-tighter">Logout</button>
+                </div>
+            </header>
 
-        <div id="video-container" class="hidden p-2 bg-black border-b border-slate-700"></div>
+            <div class="flex-1 flex overflow-hidden">
+                <div class="flex-1 flex flex-col min-w-0">
+                    <div id="video-container" class="hidden w-full p-2 bg-black"></div>
+                    <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-6"></div>
+                    
+                    <div class="p-4">
+                        <div class="bg-[#383a40] rounded-lg flex items-center px-4 py-2">
+                            <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-2 text-gray-200">
+                            <button onclick="sendMsg()" class="bg-[#5865f2] px-4 py-1.5 rounded font-bold text-sm text-white hover:bg-[#4752c4]">Send</button>
+                        </div>
+                        <div class="admin-only text-[10px] text-red-500/60 font-mono mt-1 px-2">GHOST ADMIN: /kick [user] | /server [msg]</div>
+                    </div>
+                </div>
 
-        <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-
-        <div class="p-4 bg-slate-800 border-t border-slate-700">
-            <div class="flex gap-2">
-                <input id="msg-input" type="text" placeholder="Type @Name for private..." class="flex-1 p-4 rounded-2xl bg-slate-900 border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500">
-                <button onclick="sendMsg()" class="bg-blue-600 px-6 rounded-2xl font-bold">Send</button>
-            </div>
-            <div class="admin-only text-[10px] text-red-500/80 text-center pt-2 italic">
-                ADMIN: /kick [user] | /server [msg]
+                <div class="member-list w-60 hidden lg:flex flex-col p-4 border-l border-black/10">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">Members — 6</h3>
+                    <div id="user-list" class="space-y-2">
+                        </div>
+                </div>
             </div>
         </div>
     </div>
@@ -66,12 +90,12 @@
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
         const USERS = {
-            "admin10783": { p: "Px9#kL2Zq", role: "admin" },
-            "Mohit_Vish": { p: "vB7$mN1pX", role: "user" },
-            "Ansh": { p: "tY4@rE9wQ", role: "user" },
-            "Mohit_Jha": { p: "zS2!dF8gH", role: "user" },
-            "Eklavya": { p: "uJ5*kN3mP", role: "user" },
-            "Arth": { p: "aW1&qZ7xV", role: "user" }
+            "admin10783": { p: "Px9#kL2Zq", role: "admin", color: "text-red-400" },
+            "Mohit_Vish": { p: "vB7$mN1pX", role: "user", color: "text-blue-400" },
+            "Ansh": { p: "tY4@rE9wQ", role: "user", color: "text-green-400" },
+            "Mohit_Jha": { p: "zS2!dF8gH", role: "user", color: "text-purple-400" },
+            "Eklavya": { p: "uJ5*kN3mP", role: "user", color: "text-yellow-400" },
+            "Arth": { p: "aW1&qZ7xV", role: "user", color: "text-pink-400" }
         };
 
         let user = null;
@@ -79,35 +103,35 @@
         function handleLogin() {
             const n = document.getElementById('u-name').value;
             const p = document.getElementById('u-pass').value;
-            
-            // Check credentials (case sensitive for password, insensitive for name)
             const foundUser = Object.keys(USERS).find(u => u.toLowerCase() === n.toLowerCase());
-            
+
             if (foundUser && USERS[foundUser].p === p) {
                 user = { name: foundUser, role: USERS[foundUser].role };
                 document.getElementById('login-page').classList.add('hidden');
                 document.getElementById('chat-page').classList.remove('hidden');
                 document.getElementById('display-name').innerText = foundUser;
-                document.getElementById('my-avatar').innerText = foundUser[0];
                 if(user.role === 'admin') document.body.classList.add('is-admin');
+                initMemberList();
                 loadMsgs();
                 listen();
-                checkWelcome();
             } else {
                 document.getElementById('err').classList.remove('hidden');
             }
         }
 
-        async function checkWelcome() {
-            // Sends a system notification only to you when you log in
-            const box = document.getElementById('msg-box');
-            box.innerHTML += `<div class="flex justify-center"><span class="bg-slate-800 text-[10px] px-3 py-1 rounded-full text-slate-400">Welcome to ZyChat, ${user.name}. Use @Name for secrets.</span></div>`;
+        function initMemberList() {
+            const list = document.getElementById('user-list');
+            list.innerHTML = Object.keys(USERS).filter(u => u !== 'admin10783').map(u => `
+                <div class="flex items-center gap-3 p-2 rounded hover:bg-[#35373c] cursor-pointer group">
+                    <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">${u[0]}</div>
+                    <span class="text-sm text-gray-400 group-hover:text-gray-200">${u}</span>
+                </div>
+            `).join('');
         }
 
         async function loadMsgs() {
             let { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
             if (error) return;
-            
             if (user.role !== 'admin') {
                 data = data.filter(m => m.receiver === 'all' || m.receiver.toLowerCase() === user.name.toLowerCase() || m.sender === user.name);
             }
@@ -119,13 +143,19 @@
             box.innerHTML = data.map(m => {
                 const isMe = m.sender === user.name;
                 const sys = m.is_server;
-                const isPrivate = m.receiver !== 'all';
-                return `<div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                    <span class="text-[9px] text-slate-500 mb-1 px-2 uppercase tracking-tighter">
-                        ${sys ? '🛡️ SYSTEM' : (isPrivate ? '🔒 PRIVATE' : m.sender)}
-                    </span>
-                    <div class="p-3 px-4 rounded-2xl max-w-[85%] ${sys ? 'bg-red-900/20 border border-red-900 text-red-200' : (isMe ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-200')}">
-                        ${m.content}
+                const nameColor = USERS[m.sender]?.color || "text-gray-400";
+                return `
+                <div class="flex items-start gap-4 group hover:bg-[#2e3035]/50 px-2 py-1 -mx-2 rounded">
+                    <div class="w-10 h-10 rounded-full bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-400">
+                        ${sys ? '🛡️' : m.sender[0]}
+                    </div>
+                    <div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="font-bold text-sm ${sys ? 'text-red-400' : nameColor}">${sys ? 'SYSTEM' : m.sender}</span>
+                            <span class="text-[10px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            ${m.receiver !== 'all' ? '<span class="text-[9px] bg-[#2b2d31] px-1 rounded text-gray-400 font-bold">PRIVATE</span>' : ''}
+                        </div>
+                        <p class="text-sm text-gray-300 mt-1 leading-relaxed">${m.content}</p>
                     </div>
                 </div>`;
             }).join('');
@@ -140,30 +170,24 @@
             let rec = 'all';
             let sys = false;
 
-            // Admin Commands
             if (user.role === 'admin') {
                 if (content.startsWith('/server ')) { sys = true; content = content.replace('/server ', ''); }
                 if (content.startsWith('/kick ')) { 
                     const t = content.replace('/kick ', '');
                     await sb.from('bans').insert([{ username: t }]);
-                    sys = true; content = `${t} has been banned.`;
+                    sys = true; content = `${t} was sent to the shadow realm.`;
                 }
             }
 
-            // Case-Insensitive @ Detection
             if (content.startsWith('@')) {
                 const p = content.split(' ');
                 const rawName = p[0].substring(1);
-                // Search for the user in our list regardless of case
                 const match = Object.keys(USERS).find(u => u.toLowerCase() === rawName.toLowerCase());
-                if(match) {
-                    rec = match;
-                    content = content.replace(p[0], '[Secret]');
-                }
+                if(match) { rec = match; content = content.replace(p[0], '<span class="text-blue-400 font-bold">@' + match + '</span>'); }
             }
 
             const { error } = await sb.from('messages').insert([{ sender: user.name, content, receiver: rec, is_server: sys }]);
-            if (error) alert("Offline: " + error.message);
+            if (error) alert(error.message);
             else input.value = '';
         }
 
@@ -172,26 +196,21 @@
         }
 
         async function startCall() {
-            // Fixed room for the group to sync
-            const roomName = "ZyChat_Global_Secure_Room";
+            const uniqueRoom = "ZyChat_Call_" + Math.random().toString(36).substring(7);
             const vc = document.getElementById('video-container');
-            vc.classList.toggle('hidden');
+            vc.classList.remove('hidden');
             vc.innerHTML = `
-                <div class="bg-slate-800 p-2 flex justify-between items-center text-[10px] font-bold">
-                    <span>LIVE ENCRYPTED CALL</span>
-                    <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-red-400">LEAVE</button>
+                <div class="bg-[#1e1f22] p-2 flex justify-between items-center text-[10px] font-bold">
+                    <span class="text-green-500">VOICE CHANNEL ACTIVE</span>
+                    <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-red-400 hover:text-red-300">DISCONNECT</button>
                 </div>
-                <iframe src="https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen"></iframe>
+                <iframe src="https://meet.jit.si/${uniqueRoom}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen"></iframe>
             `;
-            
-            // Notify others
-            await sb.from('messages').insert([{ 
-                sender: user.name, 
-                content: "📞 I started a group call. Tap the camera icon to join!", 
-                receiver: 'all', 
-                is_server: true 
-            }]);
+            await sb.from('messages').insert([{ sender: user.name, content: `📞 Join my call: https://meet.jit.si/${uniqueRoom}`, receiver: 'all', is_server: true }]);
         }
+
+        // Send on Enter
+        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-</html>                            
+</html>
