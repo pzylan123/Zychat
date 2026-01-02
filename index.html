@@ -2,90 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ZyChat | Private Server</title>
-    <meta name="mobile-web-app-capable" content="yes">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #313338; color: #dbdee1; height: 100vh; overflow: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         
-        /* Layout Fixes */
-        .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; }
-        .member-list { background-color: #2b2d31; width: 240px; }
-        .admin-only { display: none; }
-        .is-admin .admin-only { display: block; }
-        
-        /* Scroll Fixes for Mobile */
-        #msg-box { 
-            flex: 1; 
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch;
-            display: flex;
-            flex-direction: column;
+        /* THE CRITICAL SCROLL FIXES */
+        html, body { 
+            position: fixed; 
+            overflow: hidden; 
+            width: 100%; 
+            height: 100%; 
+            font-family: 'Inter', sans-serif;
+            background-color: #1e1f22;
         }
 
-        /* Video Frame Styling */
-        #video-container iframe { width: 100%; height: 350px; border-radius: 8px; border: none; }
+        #chat-page {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* This container handles the scrolling thread exclusively */
+        #msg-container {
+            position: relative;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch; /* Force smooth iOS scroll */
+            background-color: #313338;
+        }
+
+        #msg-box {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            min-height: min-content;
+        }
+
+        .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; }
+        iframe { width: 100%; height: 280px; border: none; background: #000; }
         
-        /* Discord-style scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 10px; }
+        /* UI Elements */
+        .admin-only { display: none; }
+        .is-admin .admin-only { display: block; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1a1b1e; }
     </style>
 </head>
-<body class="flex">
+<body>
 
     <div id="login-page" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e1f22] p-6">
-        <div class="bg-[#313338] p-10 rounded-lg shadow-2xl w-full max-w-sm border border-[#1e1f22]">
-            <h2 class="text-2xl font-bold text-center text-white mb-2">ZyChat</h2>
-            <p class="text-gray-400 text-center mb-8 text-xs uppercase font-bold tracking-widest">Authorized Access Only</p>
+        <div class="bg-[#313338] p-8 rounded-lg shadow-2xl w-full max-w-sm border border-white/5">
+            <h2 class="text-2xl font-bold text-center text-white mb-6">ZyChat</h2>
             <div class="space-y-4">
-                <input id="u-name" type="text" placeholder="Username" class="w-full p-3 rounded bg-[#1e1f22] border-none outline-none focus:ring-1 focus:ring-blue-500 text-white">
-                <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#1e1f22] border-none outline-none focus:ring-1 focus:ring-blue-500 text-white">
-                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold hover:bg-[#4752c4] transition text-white">Log In</button>
+                <input id="u-name" type="text" placeholder="Username" class="w-full p-3 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
+                <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
+                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white hover:bg-[#4752c4]">Log In</button>
             </div>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Invalid Login Token</p>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Check credentials.</p>
         </div>
     </div>
 
-    <div id="chat-page" class="hidden flex w-full h-full overflow-hidden">
-        
+    <div id="chat-page" class="hidden">
         <div class="sidebar flex flex-col items-center py-4 space-y-4">
             <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white shadow-lg">ZY</div>
-            <div class="w-8 h-[2px] bg-gray-700 rounded-full"></div>
-            <button onclick="startCall()" class="w-12 h-12 bg-[#2b2d31] rounded-3xl flex items-center justify-center hover:bg-[#23a559] hover:rounded-xl transition-all text-green-500 hover:text-white text-xl">📹</button>
+            <button onclick="startCall()" class="w-12 h-12 bg-[#2b2d31] rounded-full flex items-center justify-center hover:bg-green-600 transition-all text-xl">📹</button>
+            <button onclick="handleLogout()" class="mt-auto mb-4 text-gray-500 hover:text-red-400 text-xs font-bold">OUT</button>
         </div>
 
-        <div class="flex-1 flex flex-col min-w-0 bg-[#313338]">
-            <header class="h-12 flex items-center px-4 border-b border-[#26272b] justify-between flex-shrink-0">
-                <div class="flex items-center font-bold text-white">
-                    <span class="text-[#80848e] text-2xl mr-2 font-normal">#</span> general
-                </div>
-                <div class="flex items-center gap-3">
-                    <span id="display-name" class="text-sm font-semibold text-white"></span>
-                    <button onclick="handleLogout()" class="text-[10px] bg-[#4e5058] px-2 py-1 rounded text-white hover:bg-red-500 transition">LOGOUT</button>
-                </div>
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="h-12 flex items-center px-4 bg-[#313338] border-b border-black/20 justify-between flex-shrink-0">
+                <div class="font-bold text-white text-sm"><span class="text-gray-500">#</span> general</div>
+                <span id="display-name" class="text-xs font-semibold text-gray-400"></span>
             </header>
 
-            <div id="video-container" class="hidden w-full bg-black border-b border-[#1e1f22] flex-shrink-0"></div>
-            
-            <div id="msg-box" class="p-4 space-y-1 flex-1">
-                </div>
+            <div id="video-container" class="hidden flex-shrink-0"></div>
 
-            <div class="px-4 pb-6 pt-2 flex-shrink-0">
-                <div class="bg-[#383a40] rounded-lg flex items-center px-4">
-                    <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-3 text-[#dbdee1]">
-                    <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm hover:underline ml-2">Send</button>
-                </div>
-                <div class="admin-only text-[10px] text-red-400 mt-1 pl-2 opacity-50 uppercase font-bold tracking-tighter">Admin Mode Active</div>
+            <div id="msg-container">
+                <div id="msg-box">
+                    </div>
             </div>
-        </div>
 
-        <div class="member-list hidden lg:flex flex-col p-4 flex-shrink-0">
-            <h3 class="text-xs font-bold text-[#949ba4] uppercase mb-4 tracking-widest">Members</h3>
-            <div id="user-list" class="space-y-2"></div>
+            <div class="p-4 bg-[#313338] flex-shrink-0">
+                <div class="bg-[#383a40] rounded-lg flex items-center px-4">
+                    <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-3 text-gray-200 text-sm">
+                    <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-2">Send</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -95,18 +101,17 @@
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
         const USERS = {
-            "admin10783": { p: "Px9#kL2Zq", role: "admin", color: "text-red-400" },
-            "Mohit_Vish": { p: "vB7$mN1pX", role: "user", color: "text-blue-400" },
-            "Ansh": { p: "tY4@rE9wQ", role: "user", color: "text-green-400" },
-            "Mohit_Jha": { p: "zS2!dF8gH", role: "user", color: "text-purple-400" },
-            "Eklavya": { p: "uJ5*kN3mP", role: "user", color: "text-yellow-400" },
-            "Arth": { p: "aW1&qZ7xV", role: "user", color: "text-pink-400" }
+            "admin10783": { p: "Px9#kL2Zq", color: "text-red-400" },
+            "Mohit_Vish": { p: "vB7$mN1pX", color: "text-blue-400" },
+            "Ansh": { p: "tY4@rE9wQ", color: "text-green-400" },
+            "Mohit_Jha": { p: "zS2!dF8gH", color: "text-purple-400" },
+            "Eklavya": { p: "uJ5*kN3mP", color: "text-yellow-400" },
+            "Arth": { p: "aW1&qZ7xV", color: "text-pink-400" }
         };
 
-        const STATIC_ROOM = "ZyChat_Static_Alpha_Secure_Line_2024";
+        const STATIC_ROOM = "ZyChat_Global_Secure_Room_V3";
         let user = null;
 
-        // --- SESSION MANAGEMENT ---
         window.onload = () => {
             const saved = localStorage.getItem('zy_session');
             if (saved) {
@@ -121,7 +126,7 @@
             const found = Object.keys(USERS).find(u => u.toLowerCase() === n.toLowerCase());
 
             if (found && USERS[found].p === p) {
-                user = { name: found, role: USERS[found].role };
+                user = { name: found };
                 localStorage.setItem('zy_session', JSON.stringify(user));
                 enterApp();
             } else {
@@ -138,112 +143,66 @@
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('chat-page').classList.remove('hidden');
             document.getElementById('display-name').innerText = user.name;
-            if(user.role === 'admin') document.body.classList.add('is-admin');
-            
-            initUserList();
             loadMsgs();
             listen();
         }
 
-        // --- CHAT LOGIC ---
-        function initUserList() {
-            const list = document.getElementById('user-list');
-            list.innerHTML = Object.keys(USERS).map(u => `
-                <div class="flex items-center gap-3 px-2 py-1 rounded hover:bg-[#35373c] transition">
-                    <div class="w-8 h-8 rounded-full bg-[#1e1f22] flex items-center justify-center text-xs font-bold text-gray-500">${u[0]}</div>
-                    <span class="text-sm font-medium ${USERS[u].color}">${u}</span>
-                </div>
-            `).join('');
-        }
-
         async function loadMsgs() {
-            let { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-            if (error) return;
-            
-            if (user.role !== 'admin') {
-                data = data.filter(m => m.receiver === 'all' || m.receiver.toLowerCase() === user.name.toLowerCase() || m.sender === user.name);
-            }
-            render(data);
+            const { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
+            if (!error) render(data);
         }
 
         function render(data) {
             const box = document.getElementById('msg-box');
             box.innerHTML = data.map(m => {
-                const nameColor = USERS[m.sender]?.color || "text-gray-400";
-                let contentHTML = m.content;
-                
-                // Call Invite Hook
-                if (m.content.includes("https://meet.jit.si/")) {
-                    contentHTML = `
-                        <div class="bg-[#2b2d31] border-l-4 border-green-500 p-4 rounded mt-2 max-w-sm">
-                            <p class="text-white font-bold text-xs uppercase mb-2 tracking-widest">Active Voice Room</p>
-                            <button onclick="joinCall()" class="w-full bg-[#248046] hover:bg-[#1a6334] text-white py-2 rounded text-xs font-bold transition">JOIN CHANNEL</button>
-                        </div>
-                    `;
+                const color = USERS[m.sender]?.color || "text-gray-400";
+                let content = m.content;
+                if (content.includes("https://meet.jit.si/")) {
+                    content = `<button onclick="joinCall()" class="bg-[#248046] px-4 py-2 rounded text-[10px] font-bold text-white mt-1">JOIN VOICE CHANNEL</button>`;
                 }
 
                 return `
-                <div class="flex items-start gap-4 px-4 py-1.5 hover:bg-[#2e3035]/50 rounded transition-colors group">
+                <div class="mb-4 flex gap-3">
                     <div class="w-10 h-10 rounded bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
-                    <div class="min-w-0">
-                        <div class="flex items-baseline gap-2">
-                            <span class="font-bold text-[15px] ${nameColor}">${m.sender}</span>
-                            <span class="text-[10px] text-[#949ba4] font-medium">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm ${color}">${m.sender}</span>
+                            <span class="text-[9px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
-                        <div class="text-[14px] text-[#dbdee1] leading-relaxed break-words">${contentHTML}</div>
+                        <div class="text-sm text-gray-300 mt-0.5 break-all">${content}</div>
                     </div>
                 </div>`;
             }).join('');
-            box.scrollTop = box.scrollHeight;
+            
+            // Critical: Force scroll to bottom
+            const container = document.getElementById('msg-container');
+            container.scrollTop = container.scrollHeight;
         }
 
         async function sendMsg() {
             const input = document.getElementById('msg-input');
-            let content = input.value.trim();
-            if (!content) return;
-
-            let rec = 'all';
-            let sys = false;
-
-            // Admin Logic
-            if (user.role === 'admin') {
-                if (content.startsWith('/server ')) { sys = true; content = content.replace('/server ', ''); }
-                if (content.startsWith('/kick ')) { 
-                    const t = content.replace('/kick ', '');
-                    await sb.from('messages').insert([{ sender: 'SYSTEM', content: `${t} was kicked.`, receiver: 'all', is_server: true }]);
-                    return input.value = '';
-                }
-            }
-
-            // Private Logic
-            if (content.startsWith('@')) {
-                const p = content.split(' ');
-                const rawName = p[0].substring(1);
-                const match = Object.keys(USERS).find(u => u.toLowerCase() === rawName.toLowerCase());
-                if(match) { rec = match; content = content.replace(p[0], `<span class="text-[#00a8fc] font-semibold">@${match}</span>`); }
-            }
-
-            const { error } = await sb.from('messages').insert([{ sender: user.name, content, receiver: rec, is_server: sys }]);
-            if (!error) input.value = '';
+            const val = input.value.trim();
+            if (!val) return;
+            input.value = '';
+            await sb.from('messages').insert([{ sender: user.name, content: val, receiver: 'all' }]);
         }
 
         function listen() {
             sb.channel('zy').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
         }
 
-        // --- CALL LOGIC ---
-        async function startCall() {
+        function startCall() {
             joinCall();
-            await sb.from('messages').insert([{ sender: user.name, content: `📞 Join me: https://meet.jit.si/${STATIC_ROOM}`, receiver: 'all', is_server: true }]);
+            sb.from('messages').insert([{ sender: user.name, content: `📞 Join call: https://meet.jit.si/${STATIC_ROOM}`, receiver: 'all' }]);
         }
 
         function joinCall() {
             const vc = document.getElementById('video-container');
-            vc.classList.remove('hidden');
+            vc.classList.toggle('hidden');
             vc.innerHTML = `
-                <div class="bg-[#1e1f22] p-2 flex justify-between items-center text-[10px] font-bold border-b border-black/30">
-                    <span class="text-[#23a559] animate-pulse uppercase tracking-tighter">Voice Connected</span>
-                    <button onclick="document.getElementById('video-container').classList.add('hidden')" class="bg-red-500/10 text-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition">DISCONNECT</button>
+                <div class="bg-black p-1 flex justify-between items-center text-[10px] font-bold">
+                    <span class="text-green-500 pl-2 uppercase">Voice Active</span>
+                    <button onclick="document.getElementById('video-container').classList.add('hidden')" class="text-red-500 pr-2 italic">DISCONNECT</button>
                 </div>
                 <iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true" allow="camera; microphone; fullscreen"></iframe>
             `;
