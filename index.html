@@ -107,6 +107,24 @@
         }
 
         async function sendMsg() {
+          
+            // Add this inside your existing sendMsg() function
+if (content.startsWith('/kick ') && user.role === 'admin') {
+    const target = content.replace('/kick ', '').trim();
+    const { error } = await sb.from('bans').insert([{ username: target }]);
+    
+    if (!error) {
+        alert(target + " has been banned.");
+        // Optional: Send a system message about the kick
+        await sb.from('messages').insert([{ 
+            sender: user.name, 
+            content: `${target} was kicked from the chat.`, 
+            is_server: true 
+        }]);
+    }
+    document.getElementById('msg-input').value = '';
+    return;
+}
             let content = document.getElementById('msg-input').value;
             if (!content) return;
 
