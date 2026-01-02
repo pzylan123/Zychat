@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeChat</title>
+    <title>ZyChat</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         .admin-only { display: none; }
         .is-admin .admin-only { display: block; }
-        #video-container iframe { width: 100%; height: 350px; border-radius: 12px; }
+        #video-container iframe { width: 100%; height: 350px; border-radius: 12px; border: 2px solid #1e293b; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
@@ -19,42 +22,40 @@
     <div id="login-page" class="flex items-center justify-center min-h-screen p-6">
         <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-700">
             <h2 class="text-3xl font-bold mb-2 text-center text-blue-400">Secure Entry</h2>
-            <p class="text-slate-400 text-center mb-8 text-sm">Authorized Personnel Only</p>
+            <p class="text-slate-400 text-center mb-8 text-sm">ZyChat Private Server</p>
             <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-xl bg-slate-900 border border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
             <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-6 rounded-xl bg-slate-900 border border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-xl font-bold hover:bg-blue-500 transition shadow-lg shadow-blue-900/20">Login</button>
-            <p id="err" class="text-red-400 text-sm mt-4 hidden text-center">Invalid Credentials</p>
+            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-xl font-bold hover:bg-blue-500 transition">Login</button>
+            <p id="err" class="text-red-400 text-sm mt-4 hidden text-center">Unauthorized Access</p>
         </div>
     </div>
 
     <div id="chat-page" class="hidden flex flex-col h-screen max-h-screen">
-        <header class="p-4 bg-slate-800/50 backdrop-blur-md border-b border-slate-700 flex justify-between items-center">
+        <header class="p-4 bg-slate-800/80 backdrop-blur-md border-b border-slate-700 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div id="my-avatar" class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold shadow-inner">?</div>
+                <div id="my-avatar" class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold shadow-lg">?</div>
                 <div>
                     <p id="display-name" class="font-bold leading-none"></p>
-                    <span class="text-[10px] text-green-400 uppercase tracking-widest">Encrypted</span>
+                    <span class="text-[9px] text-green-400 uppercase">Encrypted Connection</span>
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="startCall()" class="bg-slate-700 p-2 rounded-full hover:bg-slate-600">📹</button>
-                <button onclick="location.reload()" class="bg-slate-700 p-2 rounded-full hover:bg-red-900">Logout</button>
+                <button onclick="startCall()" class="bg-slate-700 p-2 rounded-full hover:bg-slate-600 transition">📹</button>
+                <button onclick="location.reload()" class="bg-slate-700 p-2 rounded-full hover:bg-red-900 transition">Logout</button>
             </div>
         </header>
 
-        <div id="video-container" class="hidden p-2 bg-black"></div>
+        <div id="video-container" class="hidden p-2 bg-black border-b border-slate-700"></div>
 
-        <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-4">
-            <p class="text-center text-slate-500 text-xs mt-10">Connecting to secure server...</p>
-        </div>
+        <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
 
-        <div class="p-4 bg-slate-800 border-t border-slate-700 flex flex-col gap-2">
+        <div class="p-4 bg-slate-800 border-t border-slate-700">
             <div class="flex gap-2">
-                <input id="msg-input" type="text" placeholder="Type a message..." class="flex-1 p-4 rounded-2xl bg-slate-900 border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500">
-                <button onclick="sendMsg()" class="bg-blue-600 px-6 rounded-2xl font-bold shadow-lg shadow-blue-900/40">Send</button>
+                <input id="msg-input" type="text" placeholder="Type @Name for private..." class="flex-1 p-4 rounded-2xl bg-slate-900 border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="sendMsg()" class="bg-blue-600 px-6 rounded-2xl font-bold">Send</button>
             </div>
-            <div class="admin-only text-[10px] text-red-500/80 font-mono text-center pt-1">
-                GHOST_MODE: /kick [user] | /server [msg]
+            <div class="admin-only text-[10px] text-red-500/80 text-center pt-2 italic">
+                ADMIN: /kick [user] | /server [msg]
             </div>
         </div>
     </div>
@@ -78,27 +79,37 @@
         function handleLogin() {
             const n = document.getElementById('u-name').value;
             const p = document.getElementById('u-pass').value;
-            if (USERS[n] && USERS[n].p === p) {
-                user = { name: n, role: USERS[n].role };
+            
+            // Check credentials (case sensitive for password, insensitive for name)
+            const foundUser = Object.keys(USERS).find(u => u.toLowerCase() === n.toLowerCase());
+            
+            if (foundUser && USERS[foundUser].p === p) {
+                user = { name: foundUser, role: USERS[foundUser].role };
                 document.getElementById('login-page').classList.add('hidden');
                 document.getElementById('chat-page').classList.remove('hidden');
-                document.getElementById('display-name').innerText = n;
-                document.getElementById('my-avatar').innerText = n[0];
+                document.getElementById('display-name').innerText = foundUser;
+                document.getElementById('my-avatar').innerText = foundUser[0];
                 if(user.role === 'admin') document.body.classList.add('is-admin');
                 loadMsgs();
                 listen();
+                checkWelcome();
             } else {
                 document.getElementById('err').classList.remove('hidden');
             }
         }
 
+        async function checkWelcome() {
+            // Sends a system notification only to you when you log in
+            const box = document.getElementById('msg-box');
+            box.innerHTML += `<div class="flex justify-center"><span class="bg-slate-800 text-[10px] px-3 py-1 rounded-full text-slate-400">Welcome to ZyChat, ${user.name}. Use @Name for secrets.</span></div>`;
+        }
+
         async function loadMsgs() {
             let { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-            if (error) return console.error(error);
+            if (error) return;
             
-            // Security Filter
             if (user.role !== 'admin') {
-                data = data.filter(m => m.receiver === 'all' || m.receiver === user.name || m.sender === user.name);
+                data = data.filter(m => m.receiver === 'all' || m.receiver.toLowerCase() === user.name.toLowerCase() || m.sender === user.name);
             }
             render(data);
         }
@@ -108,9 +119,12 @@
             box.innerHTML = data.map(m => {
                 const isMe = m.sender === user.name;
                 const sys = m.is_server;
+                const isPrivate = m.receiver !== 'all';
                 return `<div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                    <span class="text-[9px] text-slate-500 mb-1 px-2">${sys ? '🛡️ SYSTEM' : m.sender}</span>
-                    <div class="p-3 px-4 rounded-2xl max-w-[85%] ${sys ? 'bg-red-900/30 border border-red-900 text-red-200' : (isMe ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-200')}">
+                    <span class="text-[9px] text-slate-500 mb-1 px-2 uppercase tracking-tighter">
+                        ${sys ? '🛡️ SYSTEM' : (isPrivate ? '🔒 PRIVATE' : m.sender)}
+                    </span>
+                    <div class="p-3 px-4 rounded-2xl max-w-[85%] ${sys ? 'bg-red-900/20 border border-red-900 text-red-200' : (isMe ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-200')}">
                         ${m.content}
                     </div>
                 </div>`;
@@ -126,23 +140,30 @@
             let rec = 'all';
             let sys = false;
 
+            // Admin Commands
             if (user.role === 'admin') {
                 if (content.startsWith('/server ')) { sys = true; content = content.replace('/server ', ''); }
                 if (content.startsWith('/kick ')) { 
                     const t = content.replace('/kick ', '');
                     await sb.from('bans').insert([{ username: t }]);
-                    sys = true; content = `${t} was removed.`;
+                    sys = true; content = `${t} has been banned.`;
                 }
             }
 
+            // Case-Insensitive @ Detection
             if (content.startsWith('@')) {
                 const p = content.split(' ');
-                rec = p[0].substring(1);
-                content = content.replace(p[0], '[Private]');
+                const rawName = p[0].substring(1);
+                // Search for the user in our list regardless of case
+                const match = Object.keys(USERS).find(u => u.toLowerCase() === rawName.toLowerCase());
+                if(match) {
+                    rec = match;
+                    content = content.replace(p[0], '[Secret]');
+                }
             }
 
             const { error } = await sb.from('messages').insert([{ sender: user.name, content, receiver: rec, is_server: sys }]);
-            if (error) alert("Error: " + error.message);
+            if (error) alert("Offline: " + error.message);
             else input.value = '';
         }
 
@@ -150,12 +171,27 @@
             sb.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
         }
 
-        function startCall() {
-            const room = "Room_" + Math.floor(Math.random() * 9999);
+        async function startCall() {
+            // Fixed room for the group to sync
+            const roomName = "ZyChat_Global_Secure_Room";
             const vc = document.getElementById('video-container');
             vc.classList.toggle('hidden');
-            vc.innerHTML = `<iframe src="https://meet.jit.si/${room}" allow="camera; microphone"></iframe>`;
+            vc.innerHTML = `
+                <div class="bg-slate-800 p-2 flex justify-between items-center text-[10px] font-bold">
+                    <span>LIVE ENCRYPTED CALL</span>
+                    <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-red-400">LEAVE</button>
+                </div>
+                <iframe src="https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen"></iframe>
+            `;
+            
+            // Notify others
+            await sb.from('messages').insert([{ 
+                sender: user.name, 
+                content: "📞 I started a group call. Tap the camera icon to join!", 
+                receiver: 'all', 
+                is_server: true 
+            }]);
         }
     </script>
 </body>
-    </html>
+</html>                            
