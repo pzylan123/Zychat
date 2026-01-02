@@ -3,64 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat | Secure</title>
+    <title>ZyChat | Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         html, body { position: fixed; overflow: hidden; width: 100%; height: 100%; font-family: 'Inter', sans-serif; background-color: #1e1f22; color: #dbdee1; }
-        .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 12px; }
+        .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 12px; border-right: 1px solid rgba(0,0,0,0.2); }
+        .member-list { width: 200px; background-color: #2b2d31; border-left: 1px solid rgba(0,0,0,0.2); }
         #msg-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background-color: #313338; }
         #call-overlay { position: fixed; inset: 0; z-index: 200; background: #000; display: none; }
         #call-overlay iframe { width: 100%; height: 100%; border: none; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .online { background-color: #23a559; box-shadow: 0 0 8px #23a559; }
+        .offline { background-color: #80848e; }
         .msg-item:hover .msg-tools { display: flex; }
-        .server-msg { background: rgba(255, 255, 255, 0.05); border-left: 4px solid #fff; padding: 10px; margin: 5px 0; font-family: monospace; }
-        .private-msg { background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865f2; }
     </style>
 </head>
 <body class="flex">
 
     <div id="login-page" class="fixed inset-0 z-[300] flex items-center justify-center bg-[#1e1f22]">
-        <div class="bg-[#313338] p-8 rounded-lg shadow-2xl w-80 border border-white/5">
-            <h2 class="text-2xl font-bold text-white text-center mb-6">ZyChat</h2>
+        <div class="bg-[#313338] p-8 rounded-xl shadow-2xl w-80 border border-white/5">
+            <h2 class="text-2xl font-bold text-white text-center mb-6 tracking-tight">ZyChat</h2>
             <input id="u-name" type="text" placeholder="Username" class="w-full p-3 mb-4 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
             <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 mb-6 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
-            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white hover:bg-[#4752c4]">Log In</button>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Access Denied.</p>
+            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white hover:bg-[#4752c4] transition">Log In</button>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Check credentials.</p>
         </div>
     </div>
 
     <div id="call-overlay">
         <div class="absolute top-4 left-4 z-[210] flex gap-2">
-            <button onclick="minimizeCall()" class="bg-gray-900/90 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest">Chat</button>
-            <button onclick="endCall()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest">End Call</button>
+            <button onclick="minimizeCall()" class="bg-gray-900/90 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase">Chat</button>
+            <button onclick="endCall()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase">End Call</button>
         </div>
         <div id="jitsi-target" class="w-full h-full"></div>
     </div>
 
     <div id="side-nav" class="sidebar hidden">
         <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white text-xl">ZY</div>
-        <div class="w-8 h-[2px] bg-white/10 rounded"></div>
         <button onclick="openCall()" class="w-12 h-12 bg-[#2b2d31] rounded-full flex items-center justify-center hover:bg-green-600 transition-all text-xl">📹</button>
-        <button onclick="handleLogout()" class="mt-auto text-gray-500 hover:text-red-400 font-bold text-[10px] uppercase">Logout</button>
+        <button onclick="handleLogout()" class="mt-auto text-gray-500 hover:text-red-400 font-bold text-[10px]">LOGOUT</button>
     </div>
 
     <div id="chat-page" class="hidden flex-1 flex flex-col min-w-0">
         <header class="h-12 flex items-center px-4 bg-[#313338] border-b border-black/20 justify-between">
             <div class="font-bold text-sm"># general</div>
-            <div id="call-status" onclick="maximizeCall()" class="hidden cursor-pointer bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[10px] font-bold animate-pulse">● LIVE CALL ACTIVE</div>
+            <div id="call-status" onclick="maximizeCall()" class="hidden cursor-pointer bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[10px] font-bold animate-pulse">● CALL ACTIVE</div>
         </header>
-
-        <div id="msg-container">
-            <div id="msg-box" class="p-4 space-y-4"></div>
-        </div>
-
+        <div id="msg-container"><div id="msg-box" class="p-4 space-y-4"></div></div>
+        <div id="typing-ui" class="text-[10px] text-gray-500 px-4 h-4 hidden">Someone is typing...</div>
         <div class="p-4 bg-[#313338]">
-            <div class="bg-[#383a40] rounded-lg flex items-center px-4">
-                <input id="msg-input" type="text" placeholder="Message..." class="flex-1 bg-transparent border-none outline-none py-3 text-sm">
-                <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-2">Send</button>
-            </div>
+            <input id="msg-input" type="text" placeholder="Message..." class="w-full bg-[#383a40] p-3 rounded-lg outline-none text-sm">
         </div>
+    </div>
+
+    <div id="member-sidebar" class="member-list hidden p-4">
+        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Users — <span id="user-count">0</span></h3>
+        <div id="online-users" class="space-y-3"></div>
     </div>
 
     <script>
@@ -69,17 +69,64 @@
         const sb = supabase.createClient(SB_URL, SB_KEY);
         const STATIC_ROOM = "ZyChat_Global_Secure_Room_V3";
         let user = null;
+        let allProfiles = [];
 
-        // --- AUTH & AUTO LOGIN ---
+        // --- AUTH & MEMBER LIST ---
         window.onload = () => {
             const saved = localStorage.getItem('zy_session');
             if (saved) { user = JSON.parse(saved); enterApp(); }
         };
 
+        async function enterApp() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('chat-page').classList.remove('hidden');
+            document.getElementById('side-nav').classList.remove('hidden');
+            document.getElementById('member-sidebar').classList.remove('hidden');
+            
+            const { data } = await sb.from('profiles').select('username, color');
+            allProfiles = data;
+            
+            updateMemberList();
+            loadMsgs(); 
+            listen();
+            setupPresence();
+        }
+
+        function updateMemberList() {
+            const list = document.getElementById('online-users');
+            document.getElementById('user-count').innerText = allProfiles.length;
+            list.innerHTML = allProfiles.map(p => `
+                <div class="flex items-center gap-2 opacity-80 hover:opacity-100 cursor-pointer">
+                    <div class="status-dot online"></div>
+                    <span class="text-xs font-medium ${p.color}">${p.username}</span>
+                </div>
+            `).join('');
+        }
+
+        // --- BACKGROUND VC FIX ---
+        // This ensures audio keeps playing in background by keeping a small "silent" loop
+        function startNoSleep() {
+            const audio = new Audio("https://github.com/anars/blank-audio/raw/master/10-seconds-of-silence.mp3");
+            audio.loop = true;
+            audio.play();
+        }
+
+        function openCall() {
+            startNoSleep();
+            document.getElementById('call-overlay').style.display = 'block';
+            document.getElementById('call-status').classList.remove('hidden');
+            const target = document.getElementById('jitsi-target');
+            if(!target.innerHTML) {
+                // Jitsi with background features enabled
+                target.innerHTML = `<iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.backgroundAlpha=0" allow="camera; microphone; fullscreen; autoplay"></iframe>`;
+            }
+        }
+
+        // --- MESSAGE & DELETE/EDIT LOGIC (Same as before but faster) ---
         async function handleLogin() {
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
-            const { data } = await sb.from('profiles').select('*').eq('username', n).eq('password', p).single();
+            const { data } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p).single();
             if (data && !data.is_banned) {
                 user = { name: data.username, color: data.color, role: data.username === 'admin10783' ? 'admin' : 'user' };
                 localStorage.setItem('zy_session', JSON.stringify(user));
@@ -89,28 +136,6 @@
 
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
 
-        function enterApp() {
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('chat-page').classList.remove('hidden');
-            document.getElementById('side-nav').classList.remove('hidden');
-            loadMsgs(); listen();
-        }
-
-        // --- MESSAGE TOOLS (EDIT/DELETE) ---
-        async function deleteMsg(id) {
-            if (confirm("Delete this message?")) {
-                await sb.from('messages').delete().eq('id', id);
-            }
-        }
-
-        async function editMsg(id, oldContent) {
-            const newContent = prompt("Edit message:", oldContent);
-            if (newContent && newContent !== oldContent) {
-                await sb.from('messages').update({ content: newContent }).eq('id', id);
-            }
-        }
-
-        // --- CHAT LOGIC ---
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
             if (data) render(data);
@@ -121,26 +146,24 @@
             box.innerHTML = data.map(m => {
                 const isMine = m.sender === user.name;
                 const isAdmin = user.role === 'admin';
-                const isServer = m.sender === 'SYSTEM';
                 const isPrivate = m.receiver !== 'all';
-                
-                // Privacy Filter
                 if (isPrivate && !isMine && m.receiver !== user.name && !isAdmin) return '';
+                const p = allProfiles.find(ap => ap.username === m.sender);
 
                 return `
-                <div class="relative group msg-item flex gap-3 ${isServer ? 'server-msg' : ''} ${isPrivate ? 'private-msg' : ''}">
+                <div class="relative group msg-item flex gap-3 ${isPrivate ? 'bg-[#5865f2]/5 border-l-2 border-[#5865f2] px-2' : ''}">
                     <div class="w-10 h-10 rounded bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm text-white">${m.sender}</span>
+                            <span class="font-bold text-sm ${p ? p.color : 'text-white'}">${m.sender}</span>
                             <span class="text-[9px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
-                        <div class="text-sm text-gray-300">${m.content}</div>
+                        <div class="text-sm text-gray-300 break-words">${m.content}</div>
                     </div>
                     ${(isMine || isAdmin) ? `
-                    <div class="msg-tools hidden absolute right-0 top-0 bg-[#1e1f22] rounded shadow-lg border border-white/10 p-1 gap-2">
-                        <button onclick="editMsg(${m.id}, '${m.content}')" class="text-[10px] hover:text-blue-400 px-1">EDIT</button>
-                        <button onclick="deleteMsg(${m.id})" class="text-[10px] hover:text-red-400 px-1">DEL</button>
+                    <div class="msg-tools hidden absolute right-2 top-0 bg-[#1e1f22] rounded shadow-xl border border-white/10 p-1 gap-2">
+                        <button onclick="editMsg(${m.id}, '${m.content.replace(/'/g, "\\'")}')" class="text-[8px] font-bold px-1">EDIT</button>
+                        <button onclick="deleteMsg(${m.id})" class="text-[8px] font-bold px-1 text-red-400">DEL</button>
                     </div>` : ''}
                 </div>`;
             }).join('');
@@ -149,49 +172,23 @@
 
         async function sendMsg() {
             const input = document.getElementById('msg-input');
-            let content = input.value.trim();
-            if (!content) return;
-            
-            let target = 'all';
-            let sender = user.name;
-
-            if (user.role === 'admin') {
-                if (content.startsWith('/server ')) { sender = 'SYSTEM'; content = content.replace('/server ', '').toUpperCase(); }
-                else if (content.startsWith('/ban ')) {
-                    const victim = content.replace('/ban ', '');
-                    await sb.from('profiles').update({ is_banned: true }).eq('username', victim);
-                    content = `🚫 USER ${victim} HAS BEEN BANNED.`; sender = 'SYSTEM';
-                }
-            }
-
-            if (content.startsWith('@')) {
-                const parts = content.split(' ');
-                target = parts[0].substring(1);
-            }
-
+            let content = input.value.trim(); if (!content) return;
+            let target = 'all', sender = user.name;
+            if (user.role === 'admin' && content.startsWith('/server ')) { sender = 'SYSTEM'; content = content.replace('/server ', '').toUpperCase(); }
+            if (content.startsWith('@')) target = content.split(' ')[0].substring(1);
             input.value = '';
             await sb.from('messages').insert([{ sender, content, receiver: target }]);
         }
 
         function listen() { sb.channel('zy').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
+        
+        async function deleteMsg(id) { if(confirm("Delete?")) await sb.from('messages').delete().eq('id', id); }
+        async function editMsg(id, old) { const n = prompt("Edit:", old); if(n) await sb.from('messages').update({content: n}).eq('id', id); }
 
-        // --- CALL LOGIC (PERSISTENT BACKGROUND) ---
-        function openCall() {
-            document.getElementById('call-overlay').style.display = 'block';
-            document.getElementById('call-status').classList.remove('hidden');
-            const target = document.getElementById('jitsi-target');
-            if(!target.innerHTML) {
-                target.innerHTML = `<iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true" allow="camera; microphone; fullscreen; autoplay"></iframe>`;
-            }
-        }
         function minimizeCall() { document.getElementById('call-overlay').style.display = 'none'; }
         function maximizeCall() { document.getElementById('call-overlay').style.display = 'block'; }
-        function endCall() {
-            document.getElementById('call-overlay').style.display = 'none';
-            document.getElementById('call-status').classList.add('hidden');
-            document.getElementById('jitsi-target').innerHTML = '';
-        }
+        function endCall() { document.getElementById('call-overlay').style.display = 'none'; document.getElementById('call-status').classList.add('hidden'); document.getElementById('jitsi-target').innerHTML = ''; }
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-    </html>
+</html>
