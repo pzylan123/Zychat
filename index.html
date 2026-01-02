@@ -3,140 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat | Zenith</title>
+    <title>ZyChat | Zenith Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
-        
-        body { background: #0b0e14; color: #eceff4; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; }
-        
-        /* Glass UI */
+        body { background: #0b0e14; color: #eceff4; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; margin:0; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        
-        /* Fixed Scroll Area */
-        #msg-container { height: calc(100vh - 140px); overflow-y: auto; scroll-behavior: smooth; }
-
-        /* Discord-style Tooltip */
-        .msg-item { position: relative; border-radius: 8px; transition: 0.2s; }
+        #msg-container { height: calc(100vh - 160px); overflow-y: auto; }
+        .msg-item { position: relative; padding: 10px; border-radius: 8px; }
         .msg-item:hover { background: rgba(255,255,255,0.03); }
-        .msg-tools { 
-            display: none; position: absolute; right: 10px; top: -12px; 
-            background: #1e1f22; border: 1px solid #444; border-radius: 6px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100;
-        }
+        .msg-tools { display: none; position: absolute; right: 10px; top: -10px; background: #1e1f22; border: 1px solid #444; border-radius: 4px; z-index: 50; }
         .msg-item:hover .msg-tools { display: flex; }
-
-        /* Call Pill */
-        #call-pill { 
-            position: fixed; top: 12px; left: 50%; transform: translateX(-50%); 
-            z-index: 500; display: none; background: #23a559; padding: 6px 16px; 
-            border-radius: 20px; font-size: 11px; font-weight: 800; color: white;
-            box-shadow: 0 0 20px rgba(35, 165, 89, 0.4); cursor: pointer;
-        }
-
-        #call-overlay { position: fixed; inset: 0; z-index: 1000; background: #000; display: none; }
     </style>
 </head>
 <body class="flex">
 
-    <div id="call-pill" onclick="maximizeCall()">● CALL ACTIVE (TAP TO VIEW)</div>
-
-    <div id="login-page" class="fixed inset-0 z-[2000] flex items-center justify-center bg-[#0b0e14]">
+    <div id="login-page" class="fixed inset-0 z-[5000] flex items-center justify-center bg-[#0b0e14]">
         <div class="glass p-10 rounded-3xl shadow-2xl w-full max-w-sm text-center">
-            <h1 class="text-4xl font-bold mb-2 tracking-tighter">ZY<span class="text-[#5865f2]">CHAT</span></h1>
-            <p class="text-gray-500 text-xs mb-8 uppercase tracking-widest">Secure Terminal</p>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-xl bg-black/40 border border-white/5 outline-none focus:border-[#5865f2] text-white">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-6 rounded-xl bg-black/40 border border-white/5 outline-none focus:border-[#5865f2] text-white">
-            <button id="login-btn" onclick="handleLogin()" class="w-full bg-[#5865f2] p-4 rounded-xl font-bold hover:scale-[1.02] transition active:scale-95">LOG IN</button>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden italic"></p>
+            <h1 class="text-4xl font-bold mb-2">ZY<span class="text-[#5865f2]">CHAT</span></h1>
+            <p class="text-gray-500 text-[10px] mb-8 uppercase tracking-[4px]">Private Terminal</p>
+            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-xl bg-black/40 border border-white/5 outline-none text-white focus:border-[#5865f2]">
+            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-6 rounded-xl bg-black/40 border border-white/5 outline-none text-white focus:border-[#5865f2]">
+            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-4 rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">LOG IN</button>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden"></p>
         </div>
     </div>
 
     <nav id="side-nav" class="hidden w-20 flex flex-col items-center py-6 border-r border-white/5 bg-[#0b0e14]">
-        <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold mb-8 shadow-lg shadow-[#5865f2]/20">ZY</div>
-        <button onclick="openCall()" class="w-12 h-12 rounded-2xl glass flex items-center justify-center text-xl hover:bg-green-500/20 transition">📹</button>
+        <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold mb-8">ZY</div>
+        <button onclick="openCall()" class="w-12 h-12 rounded-2xl glass flex items-center justify-center text-xl hover:bg-green-500/20">📹</button>
         <button onclick="handleLogout()" class="mt-auto text-gray-600 hover:text-red-500 font-bold text-[10px]">EXIT</button>
     </nav>
 
-    <main id="chat-page" class="hidden flex-1 flex flex-col bg-[#0b0e14]">
+    <main id="chat-page" class="hidden flex-1 flex flex-col">
         <header class="h-16 flex items-center px-6 border-b border-white/5 justify-between glass">
-            <div class="font-bold text-sm tracking-widest"># GENERAL-SYSTEM</div>
-            <div id="online-indicator" class="text-[10px] text-green-500 font-bold flex items-center gap-2">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> SYSTEM ONLINE
-            </div>
+            <div class="font-bold text-sm tracking-widest uppercase"># General</div>
+            <div id="call-pill" onclick="maximizeCall()" class="hidden cursor-pointer bg-green-500 text-white px-4 py-1 rounded-full text-[10px] font-bold">● ACTIVE CALL</div>
         </header>
 
-        <div id="msg-container">
-            <div id="msg-box" class="p-6 space-y-6"></div>
-        </div>
+        <div id="msg-container"><div id="msg-box" class="p-6 space-y-4"></div></div>
 
-        <div id="typing-ui" class="px-6 h-4 text-[10px] text-gray-500 italic hidden"></div>
-
-        <div class="p-4 bg-[#0b0e14]">
-            <div class="glass rounded-2xl flex items-center px-6 border border-white/10">
-                <input id="msg-input" type="text" placeholder="Send message..." class="flex-1 bg-transparent border-none outline-none py-4 text-sm">
+        <div class="p-4">
+            <div class="glass rounded-2xl flex items-center px-6">
+                <input id="msg-input" type="text" placeholder="Message..." class="flex-1 bg-transparent border-none outline-none py-4 text-sm text-white">
                 <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-4">SEND</button>
             </div>
         </div>
     </main>
 
-    <div id="call-overlay">
-        <div class="absolute top-6 left-6 z-[1100] flex gap-3">
-            <button onclick="minimizeCall()" class="glass px-6 py-2 rounded-xl text-xs font-bold">MINIMIZE</button>
-            <button onclick="endCall()" class="bg-red-600 px-6 py-2 rounded-xl text-xs font-bold">END CALL</button>
+    <div id="call-overlay" class="fixed inset-0 z-[6000] bg-black hidden">
+        <div class="absolute top-6 left-6 z-[6100] flex gap-2">
+            <button onclick="minimizeCall()" class="glass px-4 py-2 rounded-lg text-xs text-white">CHAT</button>
+            <button onclick="endCall()" class="bg-red-600 px-4 py-2 rounded-lg text-xs text-white">END</button>
         </div>
         <div id="jitsi-target" class="w-full h-full"></div>
     </div>
 
     <script>
+        // 1. DATABASE CONFIG
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        const ROOM = "ZyZenith_X_9921";
-        let user = null, allProfiles = [], typingTimeout;
+        let user = null;
+        let allProfiles = [];
 
+        // 2. THE LOGIN FUNCTION (Fixed & Debugged)
+        async function handleLogin() {
+            console.log("Login sequence started...");
+            const n = document.getElementById('u-name').value.trim();
+            const p = document.getElementById('u-pass').value.trim();
+            const err = document.getElementById('err');
+
+            if (!n || !p) {
+                alert("Please enter both Username and Password");
+                return;
+            }
+
+            try {
+                const { data, error } = await sb.from('profiles')
+                    .select('*')
+                    .ilike('username', n)
+                    .eq('password', p)
+                    .single();
+
+                if (error) {
+                    console.error("Supabase Error:", error);
+                    err.innerText = "Error: " + error.message;
+                    err.classList.remove('hidden');
+                } else if (data) {
+                    console.log("Login Success!");
+                    user = { name: data.username, color: data.color, role: data.username === 'admin10783' ? 'admin' : 'user' };
+                    localStorage.setItem('zy_session', JSON.stringify(user));
+                    enterApp();
+                } else {
+                    err.innerText = "Invalid Credentials";
+                    err.classList.remove('hidden');
+                }
+            } catch (e) {
+                alert("Critical System Error: " + e.message);
+            }
+        }
+
+        // 3. APP INITIALIZATION
         window.onload = () => {
             const saved = localStorage.getItem('zy_session');
             if (saved) { user = JSON.parse(saved); enterApp(); }
         };
 
-        // --- FIXED LOGIN ---
-        async function handleLogin() {
-            const btn = document.getElementById('login-btn');
-            const n = document.getElementById('u-name').value.trim();
-            const p = document.getElementById('u-pass').value.trim();
-            const err = document.getElementById('err');
-            
-            btn.innerText = "AUTHENTICATING...";
-            err.classList.add('hidden');
-
-            const { data, error } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p).single();
-
-            if (data) {
-                if(data.is_banned) { err.innerText = "ACCESS DENIED: BANNED"; err.classList.remove('hidden'); btn.innerText="LOG IN"; return; }
-                user = { name: data.username, color: data.color, role: data.username === 'admin10783' ? 'admin' : 'user' };
-                localStorage.setItem('zy_session', JSON.stringify(user));
-                enterApp();
-            } else {
-                err.innerText = "INVALID CREDENTIALS";
-                err.classList.remove('hidden');
-                btn.innerText = "LOG IN";
-            }
-        }
-
         async function enterApp() {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('chat-page').classList.remove('hidden');
             document.getElementById('side-nav').classList.remove('hidden');
+            
             const { data } = await sb.from('profiles').select('username, color');
-            allProfiles = data;
-            loadMsgs(); listen(); setupTyping();
+            allProfiles = data || [];
+            
+            loadMsgs();
+            sb.channel('messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
         }
 
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
 
-        // --- MESSAGE LOGIC ---
+        // 4. CHAT LOGIC
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
             if (data) render(data);
@@ -147,26 +136,22 @@
             box.innerHTML = data.map(m => {
                 const isMine = m.sender === user.name;
                 const isAdmin = user.role === 'admin';
-                const isPrivate = m.receiver !== 'all';
-                if (isPrivate && !isMine && m.receiver !== user.name && !isAdmin) return '';
-                
                 const p = allProfiles.find(ap => ap.username === m.sender);
-                const color = p ? p.color : 'text-gray-400';
-
+                
                 return `
-                <div class="msg-item p-2 group">
-                    <div class="msg-tools flex">
+                <div class="msg-item group">
+                    <div class="msg-tools">
                         ${(isMine || isAdmin) ? `
-                        <button onclick="editMsg(${m.id}, \`${m.content}\`)" class="p-2 text-blue-400 text-xs font-bold hover:bg-white/5">EDIT</button>
-                        <button onclick="deleteMsg(${m.id})" class="p-2 text-red-500 text-xs font-bold hover:bg-white/5">DEL</button>
+                            <button onclick="editMsg(${m.id}, \`${m.content}\`)" class="p-2 text-blue-400 text-[10px] font-bold">EDIT</button>
+                            <button onclick="deleteMsg(${m.id})" class="p-2 text-red-500 text-[10px] font-bold">DEL</button>
                         ` : ''}
                     </div>
                     <div class="flex gap-4">
-                        <div class="w-10 h-10 rounded-xl glass flex-shrink-0 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
+                        <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
                         <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-sm font-bold ${color}">${m.sender}</span>
-                                <span class="text-[9px] text-gray-600 font-bold">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold ${p?.color || 'text-white'}">${m.sender}</span>
+                                <span class="text-[9px] text-gray-600">${new Date(m.created_at).toLocaleTimeString()}</span>
                             </div>
                             <div class="text-sm text-gray-300">${m.content}</div>
                         </div>
@@ -178,40 +163,28 @@
 
         async function sendMsg() {
             const input = document.getElementById('msg-input');
-            let content = input.value.trim(); if (!content) return;
-            let target = 'all', sender = user.name;
-            if (user.role === 'admin' && content.startsWith('/server ')) { sender = 'SYSTEM'; content = content.replace('/server ', '').toUpperCase(); }
-            if (content.startsWith('@')) target = content.split(' ')[0].substring(1);
+            if (!input.value.trim()) return;
+            await sb.from('messages').insert([{ sender: user.name, content: input.value, receiver: 'all' }]);
             input.value = '';
-            await sb.from('messages').insert([{ sender, content, receiver: target }]);
         }
 
-        // --- TOOLS ---
         async function deleteMsg(id) { if(confirm("Delete?")) await sb.from('messages').delete().eq('id', id); }
-        async function editMsg(id, old) { const n = prompt("Edit:", old); if(n && n !== old) await sb.from('messages').update({content: n}).eq('id', id); }
+        async function editMsg(id, old) { const n = prompt("Edit:", old); if(n) await sb.from('messages').update({content: n}).eq('id', id); }
 
-        function listen() { sb.channel('zy').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
-
-        function setupTyping() {
-            const input = document.getElementById('msg-input');
-            const ui = document.getElementById('typing-ui');
-            input.oninput = () => { sb.channel('typing').send({ type: 'broadcast', event: 't', payload: { u: user.name }}); };
-            sb.channel('typing').on('broadcast', { event: 't' }, (p) => {
-                if (p.payload.u !== user.name) {
-                    ui.innerText = `${p.payload.u} is typing...`;
-                    ui.classList.remove('hidden');
-                    clearTimeout(typingTimeout);
-                    typingTimeout = setTimeout(() => ui.classList.add('hidden'), 2000);
-                }
-            }).subscribe();
+        // 5. CALL LOGIC
+        function openCall() {
+            document.getElementById('call-overlay').classList.remove('hidden');
+            document.getElementById('call-pill').classList.remove('hidden');
+            const t = document.getElementById('jitsi-target');
+            if(!t.innerHTML) t.innerHTML = `<iframe src="https://meet.jit.si/ZyZenith_Room_99" allow="camera; microphone; fullscreen; autoplay"></iframe>`;
         }
-
-        // --- CALLS ---
-        function openCall() { document.getElementById('call-overlay').style.display = 'block'; document.getElementById('call-pill').style.display = 'block'; const t = document.getElementById('jitsi-target'); if(!t.innerHTML) t.innerHTML = `<iframe src="https://meet.jit.si/${ROOM}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen; autoplay"></iframe>`; }
-        function maximizeCall() { document.getElementById('call-overlay').style.display = 'block'; }
-        function minimizeCall() { document.getElementById('call-overlay').style.display = 'none'; }
-        function endCall() { document.getElementById('call-overlay').style.display = 'none'; document.getElementById('call-pill').style.display = 'none'; document.getElementById('jitsi-target').innerHTML = ''; }
-        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
+        function maximizeCall() { document.getElementById('call-overlay').classList.remove('hidden'); }
+        function minimizeCall() { document.getElementById('call-overlay').classList.add('hidden'); }
+        function endCall() { 
+            document.getElementById('call-overlay').classList.add('hidden'); 
+            document.getElementById('call-pill').classList.add('hidden'); 
+            document.getElementById('jitsi-target').innerHTML = ''; 
+        }
     </script>
 </body>
 </html>
