@@ -11,13 +11,11 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #313338; color: #dbdee1; }
         .sidebar { background-color: #1e1f22; }
-        .member-list { background-color: #2b2d31; }
         .admin-only { display: none; }
         .is-admin .admin-only { display: block; }
         iframe { width: 100%; height: 350px; border-radius: 8px; border: none; background: #000; }
         .message-hover:hover { background-color: #2e3035; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #2b2d31; }
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 10px; }
     </style>
 </head>
@@ -32,47 +30,33 @@
                 <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#1e1f22] border-none outline-none focus:ring-1 focus:ring-blue-500 text-white">
                 <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold hover:bg-[#4752c4] transition text-white">Log In</button>
             </div>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Invalid Access Code</p>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center">Invalid Access Code</p>
         </div>
     </div>
 
     <div id="chat-page" class="hidden flex h-screen">
-        
         <div class="sidebar w-16 md:w-20 flex flex-col items-center py-4 space-y-4 flex-shrink-0">
             <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white shadow-lg">ZY</div>
-            <div class="w-8 h-[2px] bg-gray-700 rounded-full"></div>
-            <button onclick="startCall()" title="Start Call" class="w-12 h-12 bg-[#2b2d31] rounded-3xl flex items-center justify-center hover:bg-[#23a559] hover:rounded-xl transition-all text-green-500 hover:text-white">📹</button>
+            <button onclick="startCall()" class="w-12 h-12 bg-[#2b2d31] rounded-3xl flex items-center justify-center hover:bg-[#23a559] hover:rounded-xl transition-all text-green-500 hover:text-white text-xl">📹</button>
         </div>
 
         <div class="flex-1 flex flex-col min-w-0">
             <header class="h-12 flex items-center px-4 bg-[#313338] border-b border-[#26272b] justify-between z-10">
-                <div class="flex items-center font-bold text-white">
-                    <span class="text-[#80848e] text-2xl mr-2 font-normal">#</span> general
-                </div>
+                <div class="flex items-center font-bold text-white"><span class="text-[#80848e] text-2xl mr-2 font-normal">#</span> general</div>
                 <div class="flex items-center gap-3">
                     <span id="display-name" class="text-sm font-semibold text-white"></span>
-                    <button onclick="location.reload()" class="text-[10px] bg-[#4e5058] px-2 py-1 rounded text-white hover:bg-red-500 transition">LOGOUT</button>
+                    <button onclick="handleLogout()" class="text-[10px] bg-[#4e5058] px-2 py-1 rounded text-white hover:bg-red-500 transition">LOGOUT</button>
                 </div>
             </header>
 
-            <div class="flex-1 flex overflow-hidden relative">
-                <div class="flex-1 flex flex-col">
-                    <div id="video-container" class="hidden w-full bg-black border-b border-[#1e1f22]"></div>
-                    
-                    <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-1"></div>
-                    
-                    <div class="px-4 pb-6">
-                        <div class="bg-[#383a40] rounded-lg flex items-center px-4">
-                            <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-3 text-[#dbdee1]">
-                            <button onclick="sendMsg()" class="text-blue-400 font-bold text-sm hover:underline">Send</button>
-                        </div>
-                        <div class="admin-only text-[10px] text-red-400 mt-1 pl-2 opacity-50">/kick [user] | /server [msg]</div>
+            <div class="flex-1 flex flex-col">
+                <div id="video-container" class="hidden w-full bg-black border-b border-[#1e1f22]"></div>
+                <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-1"></div>
+                <div class="px-4 pb-6">
+                    <div class="bg-[#383a40] rounded-lg flex items-center px-4">
+                        <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-3 text-[#dbdee1]">
+                        <button onclick="sendMsg()" class="text-blue-400 font-bold text-sm hover:underline">Send</button>
                     </div>
-                </div>
-
-                <div class="member-list w-60 hidden lg:flex flex-col p-4">
-                    <h3 class="text-xs font-bold text-[#949ba4] uppercase mb-4 tracking-widest">Members</h3>
-                    <div id="user-list" class="space-y-2"></div>
                 </div>
             </div>
         </div>
@@ -92,37 +76,47 @@
             "Arth": { p: "aW1&qZ7xV", role: "user", color: "text-pink-400" }
         };
 
+        const GLOBAL_ROOM = "ZyChat_Secure_Protocol_Alpha_99x_77v_Private_Server";
         let user = null;
+
+        // --- AUTH LOGIC ---
+        window.onload = () => {
+            const savedUser = localStorage.getItem('zychat_session');
+            if (savedUser) {
+                user = JSON.parse(savedUser);
+                showChat();
+            }
+        };
 
         function handleLogin() {
             const n = document.getElementById('u-name').value;
             const p = document.getElementById('u-pass').value;
-            const foundUser = Object.keys(USERS).find(u => u.toLowerCase() === n.toLowerCase());
+            const found = Object.keys(USERS).find(u => u.toLowerCase() === n.toLowerCase());
 
-            if (foundUser && USERS[foundUser].p === p) {
-                user = { name: foundUser, role: USERS[foundUser].role };
-                document.getElementById('login-page').classList.add('hidden');
-                document.getElementById('chat-page').classList.remove('hidden');
-                document.getElementById('display-name').innerText = foundUser;
-                if(user.role === 'admin') document.body.classList.add('is-admin');
-                initMemberList();
-                loadMsgs();
-                listen();
+            if (found && USERS[found].p === p) {
+                user = { name: found, role: USERS[found].role };
+                localStorage.setItem('zychat_session', JSON.stringify(user));
+                showChat();
             } else {
                 document.getElementById('err').classList.remove('hidden');
             }
         }
 
-        function initMemberList() {
-            const list = document.getElementById('user-list');
-            list.innerHTML = Object.keys(USERS).map(u => `
-                <div class="flex items-center gap-3 px-2 py-1 rounded hover:bg-[#35373c] cursor-default group">
-                    <div class="w-8 h-8 rounded-full bg-[#1e1f22] flex items-center justify-center text-xs font-bold text-gray-400">${u[0]}</div>
-                    <span class="text-sm font-medium ${USERS[u].color}">${u}</span>
-                </div>
-            `).join('');
+        function handleLogout() {
+            localStorage.removeItem('zychat_session');
+            location.reload();
         }
 
+        function showChat() {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('chat-page').classList.remove('hidden');
+            document.getElementById('display-name').innerText = user.name;
+            if(user.role === 'admin') document.body.classList.add('is-admin');
+            loadMsgs();
+            listen();
+        }
+
+        // --- CHAT LOGIC ---
         async function loadMsgs() {
             let { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
             if (error) return;
@@ -135,36 +129,22 @@
         function render(data) {
             const box = document.getElementById('msg-box');
             box.innerHTML = data.map(m => {
-                const isMe = m.sender === user.name;
-                const sys = m.is_server;
                 const nameColor = USERS[m.sender]?.color || "text-gray-400";
-                
                 let contentHTML = m.content;
                 
-                // Logic to turn Jitsi links into Internal-Only buttons
                 if (m.content.includes("https://meet.jit.si/")) {
-                    const roomId = m.content.split('https://meet.jit.si/')[1].split(' ')[0];
-                    contentHTML = `
-                        <div class="bg-[#2b2d31] border-l-4 border-green-500 p-4 rounded mt-2 max-w-sm">
-                            <p class="text-white font-bold text-xs mb-1 uppercase tracking-wider">Voice Channel Invite</p>
-                            <p class="text-gray-400 text-xs mb-3 font-medium">Click join to enter the encrypted voice room.</p>
-                            <button onclick="joinCall('${roomId}')" class="w-full bg-[#248046] hover:bg-[#1a6334] text-white py-2 rounded text-xs font-bold transition">JOIN CALL</button>
-                        </div>
-                    `;
+                    contentHTML = `<button onclick="joinCall()" class="bg-[#248046] px-4 py-2 rounded text-xs font-bold text-white mt-2">JOIN ACTIVE VOICE CHANNEL</button>`;
                 }
 
                 return `
-                <div class="flex items-start gap-4 px-4 py-2 message-hover group">
-                    <div class="w-10 h-10 rounded-full bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-400">
-                        ${sys ? '🛡️' : m.sender[0]}
-                    </div>
+                <div class="flex items-start gap-4 px-4 py-1 message-hover group">
+                    <div class="w-10 h-10 rounded bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-400">${m.sender[0]}</div>
                     <div>
                         <div class="flex items-baseline gap-2">
-                            <span class="font-bold text-[15px] ${sys ? 'text-red-400' : nameColor}">${sys ? 'SYSTEM' : m.sender}</span>
-                            <span class="text-[10px] text-[#949ba4] font-medium">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            ${m.receiver !== 'all' ? '<span class="text-[9px] bg-[#2b2d31] px-1 rounded text-red-400 font-bold uppercase tracking-tighter">Private</span>' : ''}
+                            <span class="font-bold text-[15px] ${nameColor}">${m.sender}</span>
+                            <span class="text-[10px] text-[#949ba4]">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
-                        <div class="text-[14px] text-[#dbdee1] leading-relaxed">${contentHTML}</div>
+                        <div class="text-[14px] text-[#dbdee1]">${contentHTML}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -176,56 +156,33 @@
             let content = input.value.trim();
             if (!content) return;
 
-            let rec = 'all';
-            let sys = false;
-
-            if (user.role === 'admin') {
-                if (content.startsWith('/server ')) { sys = true; content = content.replace('/server ', ''); }
-                if (content.startsWith('/kick ')) { 
-                    const t = content.replace('/kick ', '');
-                    await sb.from('bans').insert([{ username: t }]);
-                    sys = true; content = `${t} was disconnected from the server.`;
-                }
-            }
-
-            if (content.startsWith('@')) {
-                const p = content.split(' ');
-                const rawName = p[0].substring(1);
-                const match = Object.keys(USERS).find(u => u.toLowerCase() === rawName.toLowerCase());
-                if(match) { rec = match; content = content.replace(p[0], '<span class="text-[#00a8fc] font-semibold">@' + match + '</span>'); }
-            }
-
-            const { error } = await sb.from('messages').insert([{ sender: user.name, content, receiver: rec, is_server: sys }]);
-            if (error) console.error(error);
-            else input.value = '';
+            const { error } = await sb.from('messages').insert([{ sender: user.name, content, receiver: 'all' }]);
+            if (!error) input.value = '';
         }
 
         function listen() {
             sb.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
         }
 
+        // --- CALL LOGIC ---
         async function startCall() {
-            const uniqueRoom = "ZyChat_Live_" + Math.random().toString(36).substring(7);
-            joinCall(uniqueRoom);
-            await sb.from('messages').insert([{ sender: user.name, content: `📞 Joining voice... https://meet.jit.si/${uniqueRoom}`, receiver: 'all', is_server: true }]);
+            joinCall();
+            await sb.from('messages').insert([{ sender: user.name, content: `📞 Joining voice... https://meet.jit.si/${GLOBAL_ROOM}`, receiver: 'all', is_server: true }]);
         }
 
-        function joinCall(roomId) {
+        function joinCall() {
             const vc = document.getElementById('video-container');
             vc.classList.remove('hidden');
             vc.innerHTML = `
                 <div class="bg-[#1e1f22] p-2 flex justify-between items-center text-[10px] font-bold">
-                    <span class="text-[#23a559] flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        VOICE CONNECTED / SECURE CHANNEL
-                    </span>
-                    <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="bg-red-500/10 text-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition">DISCONNECT</button>
+                    <span class="text-[#23a559]">● VOICE CONNECTED</span>
+                    <button onclick="vc.classList.add('hidden'); vc.innerHTML='';" class="text-red-500 px-2">DISCONNECT</button>
                 </div>
-                <iframe src="https://meet.jit.si/${roomId}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen"></iframe>
+                <iframe src="https://meet.jit.si/${GLOBAL_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true" allow="camera; microphone; fullscreen"></iframe>
             `;
         }
 
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-    </html>
+</html>
