@@ -8,77 +8,71 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #313338; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #313338; color: #dbdee1; }
         .sidebar { background-color: #1e1f22; }
-        .chat-area { background-color: #313338; }
         .member-list { background-color: #2b2d31; }
         .admin-only { display: none; }
         .is-admin .admin-only { display: block; }
-        iframe { width: 100%; height: 300px; border-radius: 8px; border: none; }
+        iframe { width: 100%; height: 350px; border-radius: 8px; border: none; background: #000; }
+        .message-hover:hover { background-color: #2e3035; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #2b2d31; }
         ::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 10px; }
     </style>
 </head>
-<body class="text-gray-200 overflow-hidden">
+<body class="overflow-hidden">
 
     <div id="login-page" class="flex items-center justify-center min-h-screen bg-[#1e1f22] p-6">
-        <div class="bg-[#313338] p-10 rounded-lg shadow-2xl w-full max-w-md border border-[#1e1f22]">
-            <h2 class="text-2xl font-bold mb-2 text-center text-white">Welcome Back!</h2>
-            <p class="text-gray-400 text-center mb-8 text-sm">We're so excited to see you again!</p>
+        <div class="bg-[#313338] p-10 rounded-lg shadow-2xl w-full max-w-sm border border-[#1e1f22]">
+            <h2 class="text-2xl font-bold mb-1 text-center text-white">ZyChat</h2>
+            <p class="text-gray-400 text-center mb-8 text-sm italic">Secure Communication</p>
             <div class="space-y-4">
-                <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase">Username</label>
-                    <input id="u-name" type="text" class="w-full p-3 mt-1 rounded bg-[#1e1f22] border-none outline-none focus:ring-2 focus:ring-blue-500 text-white">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase">Password</label>
-                    <input id="u-pass" type="password" class="w-full p-3 mt-1 rounded bg-[#1e1f22] border-none outline-none focus:ring-2 focus:ring-blue-500 text-white">
-                </div>
-                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold hover:bg-[#4752c4] transition text-white mt-4">Log In</button>
+                <input id="u-name" type="text" placeholder="Username" class="w-full p-3 rounded bg-[#1e1f22] border-none outline-none focus:ring-1 focus:ring-blue-500 text-white">
+                <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#1e1f22] border-none outline-none focus:ring-1 focus:ring-blue-500 text-white">
+                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold hover:bg-[#4752c4] transition text-white">Log In</button>
             </div>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center">Invalid login credentials.</p>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Invalid Access Code</p>
         </div>
     </div>
 
     <div id="chat-page" class="hidden flex h-screen">
         
-        <div class="sidebar w-16 md:w-20 flex flex-col items-center py-4 space-y-4 border-r border-black/20">
-            <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white shadow-lg cursor-pointer hover:rounded-xl transition-all">ZY</div>
-            <div class="w-12 h-0.5 bg-gray-700 rounded-full mx-auto"></div>
-            <button onclick="startCall()" class="w-12 h-12 bg-[#2b2d31] rounded-3xl flex items-center justify-center hover:bg-[#23a559] hover:rounded-xl transition-all text-green-500 hover:text-white">📹</button>
+        <div class="sidebar w-16 md:w-20 flex flex-col items-center py-4 space-y-4 flex-shrink-0">
+            <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white shadow-lg">ZY</div>
+            <div class="w-8 h-[2px] bg-gray-700 rounded-full"></div>
+            <button onclick="startCall()" title="Start Call" class="w-12 h-12 bg-[#2b2d31] rounded-3xl flex items-center justify-center hover:bg-[#23a559] hover:rounded-xl transition-all text-green-500 hover:text-white">📹</button>
         </div>
 
-        <div class="flex-1 flex flex-col">
-            <header class="h-12 flex items-center px-4 shadow-md bg-[#313338] border-b border-black/20 justify-between">
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="h-12 flex items-center px-4 bg-[#313338] border-b border-[#26272b] justify-between z-10">
                 <div class="flex items-center font-bold text-white">
-                    <span class="text-gray-500 text-2xl mr-2">#</span> general
+                    <span class="text-[#80848e] text-2xl mr-2 font-normal">#</span> general
                 </div>
-                <div class="flex items-center gap-4">
-                    <span id="display-name" class="text-sm font-semibold text-gray-300"></span>
-                    <button onclick="location.reload()" class="text-xs text-gray-400 hover:text-red-400 uppercase font-bold tracking-tighter">Logout</button>
+                <div class="flex items-center gap-3">
+                    <span id="display-name" class="text-sm font-semibold text-white"></span>
+                    <button onclick="location.reload()" class="text-[10px] bg-[#4e5058] px-2 py-1 rounded text-white hover:bg-red-500 transition">LOGOUT</button>
                 </div>
             </header>
 
-            <div class="flex-1 flex overflow-hidden">
-                <div class="flex-1 flex flex-col min-w-0">
-                    <div id="video-container" class="hidden w-full p-2 bg-black"></div>
-                    <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-6"></div>
+            <div class="flex-1 flex overflow-hidden relative">
+                <div class="flex-1 flex flex-col">
+                    <div id="video-container" class="hidden w-full bg-black border-b border-[#1e1f22]"></div>
                     
-                    <div class="p-4">
-                        <div class="bg-[#383a40] rounded-lg flex items-center px-4 py-2">
-                            <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-2 text-gray-200">
-                            <button onclick="sendMsg()" class="bg-[#5865f2] px-4 py-1.5 rounded font-bold text-sm text-white hover:bg-[#4752c4]">Send</button>
+                    <div id="msg-box" class="flex-1 overflow-y-auto p-4 space-y-1"></div>
+                    
+                    <div class="px-4 pb-6">
+                        <div class="bg-[#383a40] rounded-lg flex items-center px-4">
+                            <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-3 text-[#dbdee1]">
+                            <button onclick="sendMsg()" class="text-blue-400 font-bold text-sm hover:underline">Send</button>
                         </div>
-                        <div class="admin-only text-[10px] text-red-500/60 font-mono mt-1 px-2">GHOST ADMIN: /kick [user] | /server [msg]</div>
+                        <div class="admin-only text-[10px] text-red-400 mt-1 pl-2 opacity-50">/kick [user] | /server [msg]</div>
                     </div>
                 </div>
 
-                <div class="member-list w-60 hidden lg:flex flex-col p-4 border-l border-black/10">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">Members — 6</h3>
-                    <div id="user-list" class="space-y-2">
-                        </div>
+                <div class="member-list w-60 hidden lg:flex flex-col p-4">
+                    <h3 class="text-xs font-bold text-[#949ba4] uppercase mb-4 tracking-widest">Members</h3>
+                    <div id="user-list" class="space-y-2"></div>
                 </div>
             </div>
         </div>
@@ -121,10 +115,10 @@
 
         function initMemberList() {
             const list = document.getElementById('user-list');
-            list.innerHTML = Object.keys(USERS).filter(u => u !== 'admin10783').map(u => `
-                <div class="flex items-center gap-3 p-2 rounded hover:bg-[#35373c] cursor-pointer group">
-                    <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">${u[0]}</div>
-                    <span class="text-sm text-gray-400 group-hover:text-gray-200">${u}</span>
+            list.innerHTML = Object.keys(USERS).map(u => `
+                <div class="flex items-center gap-3 px-2 py-1 rounded hover:bg-[#35373c] cursor-default group">
+                    <div class="w-8 h-8 rounded-full bg-[#1e1f22] flex items-center justify-center text-xs font-bold text-gray-400">${u[0]}</div>
+                    <span class="text-sm font-medium ${USERS[u].color}">${u}</span>
                 </div>
             `).join('');
         }
@@ -144,18 +138,33 @@
                 const isMe = m.sender === user.name;
                 const sys = m.is_server;
                 const nameColor = USERS[m.sender]?.color || "text-gray-400";
+                
+                let contentHTML = m.content;
+                
+                // Logic to turn Jitsi links into Internal-Only buttons
+                if (m.content.includes("https://meet.jit.si/")) {
+                    const roomId = m.content.split('https://meet.jit.si/')[1].split(' ')[0];
+                    contentHTML = `
+                        <div class="bg-[#2b2d31] border-l-4 border-green-500 p-4 rounded mt-2 max-w-sm">
+                            <p class="text-white font-bold text-xs mb-1 uppercase tracking-wider">Voice Channel Invite</p>
+                            <p class="text-gray-400 text-xs mb-3 font-medium">Click join to enter the encrypted voice room.</p>
+                            <button onclick="joinCall('${roomId}')" class="w-full bg-[#248046] hover:bg-[#1a6334] text-white py-2 rounded text-xs font-bold transition">JOIN CALL</button>
+                        </div>
+                    `;
+                }
+
                 return `
-                <div class="flex items-start gap-4 group hover:bg-[#2e3035]/50 px-2 py-1 -mx-2 rounded">
+                <div class="flex items-start gap-4 px-4 py-2 message-hover group">
                     <div class="w-10 h-10 rounded-full bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-400">
                         ${sys ? '🛡️' : m.sender[0]}
                     </div>
                     <div>
                         <div class="flex items-baseline gap-2">
-                            <span class="font-bold text-sm ${sys ? 'text-red-400' : nameColor}">${sys ? 'SYSTEM' : m.sender}</span>
-                            <span class="text-[10px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            ${m.receiver !== 'all' ? '<span class="text-[9px] bg-[#2b2d31] px-1 rounded text-gray-400 font-bold">PRIVATE</span>' : ''}
+                            <span class="font-bold text-[15px] ${sys ? 'text-red-400' : nameColor}">${sys ? 'SYSTEM' : m.sender}</span>
+                            <span class="text-[10px] text-[#949ba4] font-medium">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            ${m.receiver !== 'all' ? '<span class="text-[9px] bg-[#2b2d31] px-1 rounded text-red-400 font-bold uppercase tracking-tighter">Private</span>' : ''}
                         </div>
-                        <p class="text-sm text-gray-300 mt-1 leading-relaxed">${m.content}</p>
+                        <div class="text-[14px] text-[#dbdee1] leading-relaxed">${contentHTML}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -175,7 +184,7 @@
                 if (content.startsWith('/kick ')) { 
                     const t = content.replace('/kick ', '');
                     await sb.from('bans').insert([{ username: t }]);
-                    sys = true; content = `${t} was sent to the shadow realm.`;
+                    sys = true; content = `${t} was disconnected from the server.`;
                 }
             }
 
@@ -183,11 +192,11 @@
                 const p = content.split(' ');
                 const rawName = p[0].substring(1);
                 const match = Object.keys(USERS).find(u => u.toLowerCase() === rawName.toLowerCase());
-                if(match) { rec = match; content = content.replace(p[0], '<span class="text-blue-400 font-bold">@' + match + '</span>'); }
+                if(match) { rec = match; content = content.replace(p[0], '<span class="text-[#00a8fc] font-semibold">@' + match + '</span>'); }
             }
 
             const { error } = await sb.from('messages').insert([{ sender: user.name, content, receiver: rec, is_server: sys }]);
-            if (error) alert(error.message);
+            if (error) console.error(error);
             else input.value = '';
         }
 
@@ -196,21 +205,27 @@
         }
 
         async function startCall() {
-            const uniqueRoom = "ZyChat_Call_" + Math.random().toString(36).substring(7);
+            const uniqueRoom = "ZyChat_Live_" + Math.random().toString(36).substring(7);
+            joinCall(uniqueRoom);
+            await sb.from('messages').insert([{ sender: user.name, content: `📞 Joining voice... https://meet.jit.si/${uniqueRoom}`, receiver: 'all', is_server: true }]);
+        }
+
+        function joinCall(roomId) {
             const vc = document.getElementById('video-container');
             vc.classList.remove('hidden');
             vc.innerHTML = `
                 <div class="bg-[#1e1f22] p-2 flex justify-between items-center text-[10px] font-bold">
-                    <span class="text-green-500">VOICE CHANNEL ACTIVE</span>
-                    <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-red-400 hover:text-red-300">DISCONNECT</button>
+                    <span class="text-[#23a559] flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        VOICE CONNECTED / SECURE CHANNEL
+                    </span>
+                    <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="bg-red-500/10 text-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition">DISCONNECT</button>
                 </div>
-                <iframe src="https://meet.jit.si/${uniqueRoom}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen"></iframe>
+                <iframe src="https://meet.jit.si/${roomId}#config.prejoinPageEnabled=false" allow="camera; microphone; fullscreen"></iframe>
             `;
-            await sb.from('messages').insert([{ sender: user.name, content: `📞 Join my call: https://meet.jit.si/${uniqueRoom}`, receiver: 'all', is_server: true }]);
         }
 
-        // Send on Enter
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-</html>
+    </html>
