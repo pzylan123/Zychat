@@ -3,74 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat | Private Server</title>
+    <title>ZyChat | Secure</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
-        /* THE CRITICAL SCROLL FIXES */
-        html, body { 
-            position: fixed; 
-            overflow: hidden; 
-            width: 100%; 
-            height: 100%; 
-            font-family: 'Inter', sans-serif;
-            background-color: #1e1f22;
-        }
-
-        #chat-page {
-            display: flex;
-            height: 100%;
-            width: 100%;
-        }
-
-        /* This container handles the scrolling thread exclusively */
-        #msg-container {
-            position: relative;
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch; /* Force smooth iOS scroll */
-            background-color: #313338;
-        }
-
-        #msg-box {
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            min-height: min-content;
-        }
-
+        html, body { position: fixed; overflow: hidden; width: 100%; height: 100%; font-family: 'Inter', sans-serif; background-color: #1e1f22; }
+        #chat-page { display: flex; height: 100%; width: 100%; }
+        #msg-container { position: relative; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background-color: #313338; }
+        #msg-box { padding: 1rem; display: flex; flex-direction: column; min-height: min-content; }
         .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; }
-        iframe { width: 100%; height: 280px; border: none; background: #000; }
-        
-        /* UI Elements */
-        .admin-only { display: none; }
-        .is-admin .admin-only { display: block; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1a1b1e; }
+        iframe { width: 100%; height: 320px; border: none; background: #000; }
+        .private-msg { border-left: 3px solid #f472b6; background: rgba(244, 114, 182, 0.05); }
     </style>
 </head>
 <body>
 
     <div id="login-page" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e1f22] p-6">
-        <div class="bg-[#313338] p-8 rounded-lg shadow-2xl w-full max-w-sm border border-white/5">
-            <h2 class="text-2xl font-bold text-center text-white mb-6">ZyChat</h2>
-            <div class="space-y-4">
+        <div class="bg-[#313338] p-8 rounded-lg shadow-2xl w-full max-w-sm border border-white/5 text-center">
+            <h2 class="text-2xl font-bold text-white mb-6">ZyChat</h2>
+            <div class="space-y-4 text-left">
                 <input id="u-name" type="text" placeholder="Username" class="w-full p-3 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
                 <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
-                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white hover:bg-[#4752c4]">Log In</button>
+                <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white">Log In</button>
             </div>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Check credentials.</p>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden italic">Access Denied.</p>
         </div>
     </div>
 
     <div id="chat-page" class="hidden">
         <div class="sidebar flex flex-col items-center py-4 space-y-4">
-            <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white shadow-lg">ZY</div>
+            <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white">ZY</div>
             <button onclick="startCall()" class="w-12 h-12 bg-[#2b2d31] rounded-full flex items-center justify-center hover:bg-green-600 transition-all text-xl">📹</button>
-            <button onclick="handleLogout()" class="mt-auto mb-4 text-gray-500 hover:text-red-400 text-xs font-bold">OUT</button>
+            <button onclick="handleLogout()" class="mt-auto mb-4 text-gray-500 hover:text-red-400 text-[10px] font-bold">LOGOUT</button>
         </div>
 
         <div class="flex-1 flex flex-col min-w-0">
@@ -79,18 +44,27 @@
                 <span id="display-name" class="text-xs font-semibold text-gray-400"></span>
             </header>
 
-            <div id="video-container" class="hidden flex-shrink-0"></div>
+            <div id="video-container" class="hidden flex-shrink-0">
+                <div class="bg-black p-1 flex justify-between items-center text-[10px] font-bold">
+                    <span class="text-green-500 pl-2 uppercase tracking-widest">● Secure Audio/Video Active</span>
+                    <div class="flex gap-2 pr-2">
+                        <button onclick="refreshCall()" class="text-blue-400 hover:underline">REFRESH STREAM</button>
+                        <button onclick="closeCall()" class="text-red-500">DISCONNECT</button>
+                    </div>
+                </div>
+                <div id="iframe-holder"></div>
+            </div>
 
             <div id="msg-container">
-                <div id="msg-box">
-                    </div>
+                <div id="msg-box"></div>
             </div>
 
             <div class="p-4 bg-[#313338] flex-shrink-0">
                 <div class="bg-[#383a40] rounded-lg flex items-center px-4">
-                    <input id="msg-input" type="text" placeholder="Message #general" class="flex-1 bg-transparent border-none outline-none py-3 text-gray-200 text-sm">
+                    <input id="msg-input" type="text" placeholder="Message or @name..." class="flex-1 bg-transparent border-none outline-none py-3 text-gray-200 text-sm">
                     <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-2">Send</button>
                 </div>
+                <div class="text-[9px] text-gray-500 mt-1 pl-1">Tip: Use @Name for private messages</div>
             </div>
         </div>
     </div>
@@ -114,30 +88,21 @@
 
         window.onload = () => {
             const saved = localStorage.getItem('zy_session');
-            if (saved) {
-                user = JSON.parse(saved);
-                enterApp();
-            }
+            if (saved) { user = JSON.parse(saved); enterApp(); }
         };
 
         function handleLogin() {
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
             const found = Object.keys(USERS).find(u => u.toLowerCase() === n.toLowerCase());
-
             if (found && USERS[found].p === p) {
                 user = { name: found };
                 localStorage.setItem('zy_session', JSON.stringify(user));
                 enterApp();
-            } else {
-                document.getElementById('err').classList.remove('hidden');
-            }
+            } else { document.getElementById('err').classList.remove('hidden'); }
         }
 
-        function handleLogout() {
-            localStorage.removeItem('zy_session');
-            location.reload();
-        }
+        function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
 
         function enterApp() {
             document.getElementById('login-page').classList.add('hidden');
@@ -149,63 +114,82 @@
 
         async function loadMsgs() {
             const { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-            if (!error) render(data);
+            if (!error) {
+                // PRIVATE MESSAGE FILTERING LOGIC
+                const filtered = data.filter(m => {
+                    if (m.receiver === 'all') return true;
+                    if (m.sender === user.name) return true; // Show my own private messages
+                    if (m.receiver.toLowerCase() === user.name.toLowerCase()) return true; // Show pms sent to me
+                    return false;
+                });
+                render(filtered);
+            }
         }
 
         function render(data) {
             const box = document.getElementById('msg-box');
             box.innerHTML = data.map(m => {
                 const color = USERS[m.sender]?.color || "text-gray-400";
+                const isPrivate = m.receiver !== 'all';
                 let content = m.content;
                 if (content.includes("https://meet.jit.si/")) {
-                    content = `<button onclick="joinCall()" class="bg-[#248046] px-4 py-2 rounded text-[10px] font-bold text-white mt-1">JOIN VOICE CHANNEL</button>`;
+                    content = `<button onclick="startCall()" class="bg-[#248046] px-4 py-2 rounded text-[10px] font-bold text-white mt-1">JOIN LIVE CHANNEL</button>`;
                 }
 
                 return `
-                <div class="mb-4 flex gap-3">
+                <div class="mb-4 flex gap-3 ${isPrivate ? 'private-msg p-2 rounded' : ''}">
                     <div class="w-10 h-10 rounded bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="font-bold text-sm ${color}">${m.sender}</span>
                             <span class="text-[9px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            ${isPrivate ? '<span class="text-[8px] bg-pink-900/40 text-pink-400 px-1 rounded uppercase font-bold">Private</span>' : ''}
                         </div>
-                        <div class="text-sm text-gray-300 mt-0.5 break-all">${content}</div>
+                        <div class="text-sm text-gray-300 mt-0.5">${content}</div>
                     </div>
                 </div>`;
             }).join('');
-            
-            // Critical: Force scroll to bottom
-            const container = document.getElementById('msg-container');
-            container.scrollTop = container.scrollHeight;
+            document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
         }
 
         async function sendMsg() {
             const input = document.getElementById('msg-input');
-            const val = input.value.trim();
-            if (!val) return;
+            let content = input.value.trim();
+            if (!content) return;
+
+            let target = 'all';
+            if (content.startsWith('@')) {
+                const parts = content.split(' ');
+                const mentioned = parts[0].substring(1);
+                const match = Object.keys(USERS).find(u => u.toLowerCase() === mentioned.toLowerCase());
+                if (match) {
+                    target = match;
+                    content = content.replace(parts[0], `<span class="text-blue-400">@${match}</span>`);
+                }
+            }
+
             input.value = '';
-            await sb.from('messages').insert([{ sender: user.name, content: val, receiver: 'all' }]);
+            await sb.from('messages').insert([{ sender: user.name, content: content, receiver: target }]);
         }
 
-        function listen() {
-            sb.channel('zy').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
-        }
+        function listen() { sb.channel('zy').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
 
+        // --- IMPROVED CALL LOGIC ---
         function startCall() {
-            joinCall();
+            document.getElementById('video-container').classList.remove('hidden');
+            refreshCall();
             sb.from('messages').insert([{ sender: user.name, content: `📞 Join call: https://meet.jit.si/${STATIC_ROOM}`, receiver: 'all' }]);
         }
 
-        function joinCall() {
-            const vc = document.getElementById('video-container');
-            vc.classList.toggle('hidden');
-            vc.innerHTML = `
-                <div class="bg-black p-1 flex justify-between items-center text-[10px] font-bold">
-                    <span class="text-green-500 pl-2 uppercase">Voice Active</span>
-                    <button onclick="document.getElementById('video-container').classList.add('hidden')" class="text-red-500 pr-2 italic">DISCONNECT</button>
-                </div>
-                <iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true" allow="camera; microphone; fullscreen"></iframe>
-            `;
+        function refreshCall() {
+            const holder = document.getElementById('iframe-holder');
+            // Background Audio + Ad-refresh logic
+            holder.innerHTML = `<iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.backgroundAlpha=0&config.startWithAudioMuted=false" allow="camera; microphone; fullscreen; autoplay"></iframe>`;
+        }
+
+        function closeCall() {
+            document.getElementById('video-container').classList.add('hidden');
+            document.getElementById('iframe-holder').innerHTML = '';
         }
 
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
