@@ -3,126 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat | Pro</title>
+    <title>ZyChat | Cyber</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        html, body { position: fixed; overflow: hidden; width: 100%; height: 100%; font-family: 'Inter', sans-serif; background-color: #1e1f22; color: #dbdee1; }
-        .sidebar { background-color: #1e1f22; width: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 12px; border-right: 1px solid rgba(0,0,0,0.2); }
-        .member-list { width: 200px; background-color: #2b2d31; border-left: 1px solid rgba(0,0,0,0.2); }
-        #msg-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background-color: #313338; }
-        #call-overlay { position: fixed; inset: 0; z-index: 200; background: #000; display: none; }
-        #call-overlay iframe { width: 100%; height: 100%; border: none; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
-        .online { background-color: #23a559; box-shadow: 0 0 8px #23a559; }
-        .offline { background-color: #80848e; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+        
+        body { 
+            background: #0b0e14; 
+            color: #eceff4; 
+            font-family: 'Outfit', sans-serif; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* Glassmorphism UI */
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-border { border-left: 3px solid #5865f2; box-shadow: -5px 0 15px rgba(88, 101, 242, 0.2); }
+        
+        /* Message Hover Tools */
+        .msg-item { transition: all 0.2s ease; border-radius: 8px; position: relative; }
+        .msg-item:hover { background: rgba(255, 255, 255, 0.03); }
+        .msg-tools { display: none; position: absolute; right: 10px; top: -10px; background: #1e1f22; border: 1px solid #333; border-radius: 4px; z-index: 10; }
         .msg-item:hover .msg-tools { display: flex; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #2b2d31; border-radius: 10px; }
+
+        /* Typing Dots Animation */
+        .dot { animation: blink 1.4s infinite both; width: 4px; height: 4px; background: #5865f2; border-radius: 50%; display: inline-block; margin-right: 2px; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
     </style>
 </head>
 <body class="flex">
 
-    <div id="login-page" class="fixed inset-0 z-[300] flex items-center justify-center bg-[#1e1f22]">
-        <div class="bg-[#313338] p-8 rounded-xl shadow-2xl w-80 border border-white/5">
-            <h2 class="text-2xl font-bold text-white text-center mb-6 tracking-tight">ZyChat</h2>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-3 mb-4 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-3 mb-6 rounded bg-[#1e1f22] text-white outline-none border border-transparent focus:border-blue-500">
-            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-3 rounded font-bold text-white hover:bg-[#4752c4] transition">Log In</button>
-            <p id="err" class="text-red-400 text-xs mt-4 hidden text-center italic">Check credentials.</p>
+    <div id="login-page" class="fixed inset-0 z-[500] flex items-center justify-center bg-[#0b0e14]">
+        <div class="glass p-10 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <h1 class="text-4xl font-bold text-white mb-2 tracking-tighter">ZY<span class="text-[#5865f2]">CHAT</span></h1>
+            <p class="text-gray-500 text-sm mb-8 italic">Enter the private server</p>
+            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-xl bg-black/40 text-white outline-none border border-white/5 focus:border-[#5865f2] transition-all">
+            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-6 rounded-xl bg-black/40 text-white outline-none border border-white/5 focus:border-[#5865f2] transition-all">
+            <button onclick="handleLogin()" class="w-full bg-[#5865f2] p-4 rounded-xl font-bold text-white shadow-lg hover:scale-[1.02] active:scale-95 transition-all">CONNECT</button>
+            <p id="err" class="text-red-400 text-xs mt-4 hidden">Access Denied. Check credentials.</p>
         </div>
     </div>
 
-    <div id="call-overlay">
-        <div class="absolute top-4 left-4 z-[210] flex gap-2">
-            <button onclick="minimizeCall()" class="bg-gray-900/90 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase">Chat</button>
-            <button onclick="endCall()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase">End Call</button>
+    <div id="side-nav" class="hidden flex flex-col items-center py-6 w-20 bg-[#0b0e14] border-r border-white/5 gap-6">
+        <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center shadow-[0_0_15px_rgba(88,101,242,0.5)] font-bold text-white text-xl">ZY</div>
+        <button onclick="openCall()" class="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-green-500/20 hover:text-green-500 transition-all text-2xl">📹</button>
+        <button onclick="handleLogout()" class="mt-auto text-gray-600 hover:text-red-500 font-bold text-[10px] tracking-widest uppercase">Off</button>
+    </div>
+
+    <div id="chat-page" class="hidden flex-1 flex flex-col min-w-0 bg-[#0b0e14]">
+        <header class="h-16 flex items-center px-6 glass justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-gray-500 text-xl font-bold">#</span>
+                <span class="font-bold text-white tracking-wide">general-sector</span>
+            </div>
+            <div id="call-status" onclick="maximizeCall()" class="hidden cursor-pointer bg-green-500/10 border border-green-500/20 text-green-500 px-4 py-1.5 rounded-full text-[10px] font-bold animate-pulse">● LIVE VOICE ACTIVE</div>
+        </header>
+
+        <div id="msg-container" class="p-4 space-y-6">
+            <div id="msg-box"></div>
+        </div>
+
+        <div id="typing-ui" class="px-6 py-1 h-6 hidden">
+            <div class="flex items-center gap-2">
+                <div class="flex"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <span id="typing-text" class="text-[10px] text-gray-500 font-semibold italic"></span>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="glass rounded-2xl flex items-center px-6 py-1">
+                <input id="msg-input" type="text" placeholder="Send a message..." class="flex-1 bg-transparent border-none outline-none py-4 text-sm text-gray-200">
+                <button onclick="sendMsg()" class="text-[#5865f2] font-bold text-sm ml-4 hover:scale-110 transition-transform">SEND</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="member-sidebar" class="hidden w-64 glass border-l border-white/5 p-6 flex flex-col">
+        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-[3px] mb-6">Database Members</h3>
+        <div id="online-users" class="space-y-4"></div>
+    </div>
+
+    <div id="call-overlay" class="fixed inset-0 z-[600] bg-black hidden">
+        <div class="absolute top-6 left-6 z-[610] flex gap-3">
+            <button onclick="minimizeCall()" class="glass text-white px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-widest">Chat</button>
+            <button onclick="endCall()" class="bg-red-500 text-white px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-red-500/20">Disconnect</button>
         </div>
         <div id="jitsi-target" class="w-full h-full"></div>
-    </div>
-
-    <div id="side-nav" class="sidebar hidden">
-        <div class="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center font-bold text-white text-xl">ZY</div>
-        <button onclick="openCall()" class="w-12 h-12 bg-[#2b2d31] rounded-full flex items-center justify-center hover:bg-green-600 transition-all text-xl">📹</button>
-        <button onclick="handleLogout()" class="mt-auto text-gray-500 hover:text-red-400 font-bold text-[10px]">LOGOUT</button>
-    </div>
-
-    <div id="chat-page" class="hidden flex-1 flex flex-col min-w-0">
-        <header class="h-12 flex items-center px-4 bg-[#313338] border-b border-black/20 justify-between">
-            <div class="font-bold text-sm"># general</div>
-            <div id="call-status" onclick="maximizeCall()" class="hidden cursor-pointer bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[10px] font-bold animate-pulse">● CALL ACTIVE</div>
-        </header>
-        <div id="msg-container"><div id="msg-box" class="p-4 space-y-4"></div></div>
-        <div id="typing-ui" class="text-[10px] text-gray-500 px-4 h-4 hidden">Someone is typing...</div>
-        <div class="p-4 bg-[#313338]">
-            <input id="msg-input" type="text" placeholder="Message..." class="w-full bg-[#383a40] p-3 rounded-lg outline-none text-sm">
-        </div>
-    </div>
-
-    <div id="member-sidebar" class="member-list hidden p-4">
-        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Users — <span id="user-count">0</span></h3>
-        <div id="online-users" class="space-y-3"></div>
     </div>
 
     <script>
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        const STATIC_ROOM = "ZyChat_Global_Secure_Room_V3";
+        const STATIC_ROOM = "ZyChat_Hyper_Private_X";
         let user = null;
         let allProfiles = [];
+        let typingTimeout;
 
-        // --- AUTH & MEMBER LIST ---
+        const msgSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+
         window.onload = () => {
             const saved = localStorage.getItem('zy_session');
             if (saved) { user = JSON.parse(saved); enterApp(); }
         };
 
-        async function enterApp() {
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('chat-page').classList.remove('hidden');
-            document.getElementById('side-nav').classList.remove('hidden');
-            document.getElementById('member-sidebar').classList.remove('hidden');
-            
-            const { data } = await sb.from('profiles').select('username, color');
-            allProfiles = data;
-            
-            updateMemberList();
-            loadMsgs(); 
-            listen();
-            setupPresence();
-        }
-
-        function updateMemberList() {
-            const list = document.getElementById('online-users');
-            document.getElementById('user-count').innerText = allProfiles.length;
-            list.innerHTML = allProfiles.map(p => `
-                <div class="flex items-center gap-2 opacity-80 hover:opacity-100 cursor-pointer">
-                    <div class="status-dot online"></div>
-                    <span class="text-xs font-medium ${p.color}">${p.username}</span>
-                </div>
-            `).join('');
-        }
-
-        // --- BACKGROUND VC FIX ---
-        // This ensures audio keeps playing in background by keeping a small "silent" loop
-        function startNoSleep() {
-            const audio = new Audio("https://github.com/anars/blank-audio/raw/master/10-seconds-of-silence.mp3");
-            audio.loop = true;
-            audio.play();
-        }
-
-        function openCall() {
-            startNoSleep();
-            document.getElementById('call-overlay').style.display = 'block';
-            document.getElementById('call-status').classList.remove('hidden');
-            const target = document.getElementById('jitsi-target');
-            if(!target.innerHTML) {
-                // Jitsi with background features enabled
-                target.innerHTML = `<iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.backgroundAlpha=0" allow="camera; microphone; fullscreen; autoplay"></iframe>`;
-            }
-        }
-
-        // --- MESSAGE & DELETE/EDIT LOGIC (Same as before but faster) ---
         async function handleLogin() {
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
@@ -136,6 +127,31 @@
 
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
 
+        async function enterApp() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('chat-page').classList.remove('hidden');
+            document.getElementById('side-nav').classList.remove('hidden');
+            document.getElementById('member-sidebar').classList.remove('hidden');
+            
+            const { data } = await sb.from('profiles').select('username, color');
+            allProfiles = data;
+            
+            updateMemberList();
+            loadMsgs(); 
+            listen();
+            setupTypingListener();
+        }
+
+        function updateMemberList() {
+            const list = document.getElementById('online-users');
+            list.innerHTML = allProfiles.map(p => `
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
+                    <span class="text-sm font-semibold ${p.color}">${p.username}</span>
+                </div>
+            `).join('');
+        }
+
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
             if (data) render(data);
@@ -143,31 +159,42 @@
 
         function render(data) {
             const box = document.getElementById('msg-box');
+            const isNewMsg = data.length > (box.children.length);
+            
             box.innerHTML = data.map(m => {
                 const isMine = m.sender === user.name;
                 const isAdmin = user.role === 'admin';
                 const isPrivate = m.receiver !== 'all';
                 if (isPrivate && !isMine && m.receiver !== user.name && !isAdmin) return '';
+                
                 const p = allProfiles.find(ap => ap.username === m.sender);
+                const colorClass = p ? p.color : 'text-gray-400';
 
                 return `
-                <div class="relative group msg-item flex gap-3 ${isPrivate ? 'bg-[#5865f2]/5 border-l-2 border-[#5865f2] px-2' : ''}">
-                    <div class="w-10 h-10 rounded bg-[#1e1f22] flex-shrink-0 flex items-center justify-center font-bold text-gray-500">${m.sender[0]}</div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm ${p ? p.color : 'text-white'}">${m.sender}</span>
-                            <span class="text-[9px] text-gray-500">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                <div class="msg-item p-3 ${isPrivate ? 'neon-border bg-[#5865f2]/5' : ''}">
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-xl glass flex-shrink-0 flex items-center justify-center font-bold text-gray-500 border border-white/5">${m.sender[0]}</div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-bold text-sm ${colorClass}">${m.sender}</span>
+                                <span class="text-[9px] text-gray-600 font-bold uppercase tracking-widest">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                ${isPrivate ? '<span class="text-[8px] bg-[#5865f2] text-white px-2 py-0.5 rounded-full font-bold">PRIVATE</span>' : ''}
+                            </div>
+                            <div class="text-sm text-gray-300 leading-relaxed">${m.content}</div>
                         </div>
-                        <div class="text-sm text-gray-300 break-words">${m.content}</div>
                     </div>
                     ${(isMine || isAdmin) ? `
-                    <div class="msg-tools hidden absolute right-2 top-0 bg-[#1e1f22] rounded shadow-xl border border-white/10 p-1 gap-2">
-                        <button onclick="editMsg(${m.id}, '${m.content.replace(/'/g, "\\'")}')" class="text-[8px] font-bold px-1">EDIT</button>
-                        <button onclick="deleteMsg(${m.id})" class="text-[8px] font-bold px-1 text-red-400">DEL</button>
+                    <div class="msg-tools p-1 flex gap-1">
+                        <button onclick="editMsg(${m.id}, \`${m.content.replace(/`/g, "\\`")}\`)" class="p-2 hover:text-[#5865f2] transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg></button>
+                        <button onclick="deleteMsg(${m.id})" class="p-2 hover:text-red-500 transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                     </div>` : ''}
                 </div>`;
             }).join('');
-            document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
+
+            if (isNewMsg && data[data.length-1].sender !== user.name) {
+                msgSound.play().catch(() => {});
+            }
+            document.getElementById('msg-container').parentElement.scrollTop = document.getElementById('msg-container').parentElement.scrollHeight;
         }
 
         async function sendMsg() {
@@ -180,14 +207,32 @@
             await sb.from('messages').insert([{ sender, content, receiver: target }]);
         }
 
-        function listen() { sb.channel('zy').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
-        
-        async function deleteMsg(id) { if(confirm("Delete?")) await sb.from('messages').delete().eq('id', id); }
-        async function editMsg(id, old) { const n = prompt("Edit:", old); if(n) await sb.from('messages').update({content: n}).eq('id', id); }
+        function setupTypingListener() {
+            const input = document.getElementById('msg-input');
+            const ui = document.getElementById('typing-ui');
+            const txt = document.getElementById('typing-text');
+            
+            input.oninput = () => {
+                sb.channel('typing').send({ type: 'broadcast', event: 'type', payload: { u: user.name }});
+            };
 
-        function minimizeCall() { document.getElementById('call-overlay').style.display = 'none'; }
-        function maximizeCall() { document.getElementById('call-overlay').style.display = 'block'; }
-        function endCall() { document.getElementById('call-overlay').style.display = 'none'; document.getElementById('call-status').classList.add('hidden'); document.getElementById('jitsi-target').innerHTML = ''; }
+            sb.channel('typing').on('broadcast', { event: 'type' }, (p) => {
+                if (p.payload.u !== user.name) {
+                    txt.innerText = `${p.payload.u} is typing...`;
+                    ui.classList.remove('hidden');
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => ui.classList.add('hidden'), 2000);
+                }
+            }).subscribe();
+        }
+
+        async function deleteMsg(id) { if(confirm("Delete this message?")) await sb.from('messages').delete().eq('id', id); }
+        async function editMsg(id, old) { const n = prompt("Update Message:", old); if(n && n !== old) await sb.from('messages').update({content: n}).eq('id', id); }
+
+        function listen() { sb.channel('zy').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe(); }
+        function openCall() { document.getElementById('call-overlay').classList.remove('hidden'); document.getElementById('call-status').classList.remove('hidden'); const t = document.getElementById('jitsi-target'); if(!t.innerHTML) t.innerHTML = `<iframe src="https://meet.jit.si/${STATIC_ROOM}#config.prejoinPageEnabled=false&config.disableDeepLinking=true" allow="camera; microphone; fullscreen; autoplay"></iframe>`; }
+        function minimizeCall() { document.getElementById('call-overlay').classList.add('hidden'); }
+        function endCall() { document.getElementById('call-overlay').classList.add('hidden'); document.getElementById('call-status').classList.add('hidden'); document.getElementById('jitsi-target').innerHTML = ''; }
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
