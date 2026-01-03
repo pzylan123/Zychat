@@ -3,72 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat</title>
+    <title>Zychat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
         :root { --accent: #3b82f6; --glass: rgba(255, 255, 255, 0.03); }
         body { background: #06080c; color: #e2e8f0; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; margin: 0; }
+        
         .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
         #msg-container { height: calc(100vh - 160px); overflow-y: auto; padding-bottom: 120px; scroll-behavior: smooth; }
-        .server-log { background: rgba(59, 130, 246, 0.1) !important; border: 1px dashed rgba(59, 130, 246, 0.3) !important; text-align: center; font-family: monospace; letter-spacing: 1px; }
+        
+        .private-card { border: 1px solid #ff00ff !important; background: rgba(255, 0, 255, 0.04) !important; }
+        .server-log { background: rgba(59, 130, 246, 0.1) !important; border: 1px dashed rgba(59, 130, 246, 0.3) !important; text-align: center; }
+        
         .modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); align-items: center; justify-content: center; }
         .modal.active { display: flex; }
-        .del-trigger { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 800; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .del-trigger { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 6px 14px; border-radius: 10px; font-size: 10px; font-weight: 800; cursor: pointer; }
+        
+        #typing-box { position: absolute; bottom: 85px; left: 30px; pointer-events: none; }
+        .seen-indicator { font-size: 9px; color: #3b82f6; cursor: pointer; opacity: 0.7; }
+
         @media (max-width: 768px) {
             #side-nav { position: fixed; bottom: 0; width: 100%; height: 70px; flex-direction: row; justify-content: space-around; z-index: 1000; background: #06080c; border-top: 1px solid rgba(255,255,255,0.1); }
+            #msg-container { height: calc(100vh - 170px); }
+            #typing-box { bottom: 165px; left: 25px; }
         }
     </style>
 </head>
 <body class="flex flex-col md:flex-row">
 
     <div id="status-modal" class="modal p-6"><div class="glass w-full max-w-md rounded-[40px] p-8 shadow-2xl">
-        <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black italic tracking-tighter">COMMAND DIRECTORY</h3><button onclick="toggleModal('status-modal')" class="text-gray-500 font-bold">CLOSE</button></div>
-        <div id="member-list" class="space-y-3 max-h-80 overflow-y-auto pr-2"></div>
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black italic tracking-tighter text-blue-500">ZYCHAT DIRECTORY</h3>
+            <button onclick="toggleModal('status-modal')" class="text-gray-500 font-bold">CLOSE</button>
+        </div>
+        <div class="mb-8">
+            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Global Status</label>
+            <div class="flex gap-2 mt-2">
+                <input id="status-input" type="text" placeholder="Status..." class="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none text-white">
+                <button onclick="updateMyStatus()" class="bg-blue-600 px-5 rounded-xl text-[10px] font-black">SYNC</button>
+            </div>
+        </div>
+        <div class="space-y-3 max-h-72 overflow-y-auto" id="member-list"></div>
     </div></div>
 
     <div id="login-page" class="fixed inset-0 z-[10000] flex items-center justify-center bg-[#06080c]">
-        <div class="glass p-10 rounded-[45px] w-full max-w-sm text-center mx-4">
+        <div class="glass p-10 rounded-[45px] w-full max-w-sm text-center">
             <h1 class="text-5xl font-black mb-8 italic tracking-tighter text-white">ZY<span class="text-blue-500">CHAT</span></h1>
             <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl glass outline-none text-white">
             <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl glass outline-none text-white">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold text-lg shadow-xl shadow-blue-600/30">INITIALIZE</button>
+            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold">INITIALIZE</button>
         </div>
     </div>
 
     <nav id="side-nav" class="hidden w-24 flex flex-col items-center py-10 glass">
-        <div class="mb-10 text-blue-500 font-black text-xl italic">ZC</div>
+        <div class="mb-10 text-blue-500 font-black text-xl italic underline">ZC</div>
         <button onclick="openCall()" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">📹</button>
         <button onclick="toggleModal('status-modal'); refreshMembers();" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">👥</button>
-        <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase tracking-widest">Logout</button>
+        <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase">Logout</button>
     </nav>
 
     <main id="chat-page" class="hidden flex-1 flex flex-col relative">
         <header class="h-16 flex items-center px-8 glass border-b border-white/5 justify-between">
-            <span class="text-[10px] font-black tracking-[0.4em] text-blue-500 uppercase">ZY-CHAT</span>
-            <div id="typing-indicator" class="text-[9px] text-gray-500 italic"></div>
+            <span class="text-[10px] font-black tracking-[0.4em] text-blue-500 uppercase">Zychat_v15.3_Elite</span>
+            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[10px] font-bold text-gray-400">ENCRYPTED</span></div>
         </header>
+
         <div id="msg-container"><div id="msg-box" class="p-6 space-y-6"></div></div>
-        <div class="p-4 bg-[#06080c]/80"><div class="glass rounded-[30px] flex items-center px-6 border border-white/10 shadow-2xl">
-            <input id="msg-input" type="text" placeholder="Message or /server..." class="flex-1 bg-transparent py-4 text-sm outline-none text-white">
-            <button onclick="sendMsg()" class="text-blue-500 font-black text-xs px-4">SEND</button>
-        </div></div>
+
+        <div id="typing-box" class="text-[10px] text-blue-400 font-bold italic transition-opacity opacity-0"><span id="typing-text">Someone is typing...</span></div>
+
+        <div class="fixed md:relative bottom-[85px] md:bottom-0 w-full p-4 bg-[#06080c]/80 backdrop-blur-md">
+            <div class="glass rounded-[30px] flex items-center px-6 py-1 border border-white/10">
+                <input id="msg-input" type="text" placeholder="Type a message or /server..." class="flex-1 bg-transparent py-4 text-sm outline-none text-white" oninput="handleTyping()">
+                <button onclick="sendMsg()" class="text-blue-500 font-black text-xs px-4">SEND</button>
+            </div>
+        </div>
     </main>
 
     <script>
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        const alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
-        let user = null, allProfiles = [];
+        let user = null, allProfiles = [], typingTimeout, allViews = [];
 
         async function handleLogin() {
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
             const { data } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p);
             if (data?.length) {
-                if (data[0].is_banned) return alert("UNAUTHORIZED: Your account has been banned.");
+                if (data[0].is_banned) return alert("BANNED");
                 user = { name: data[0].username, role: data[0].username === 'admin' ? 'admin' : 'user' };
                 localStorage.setItem('zy_session', JSON.stringify(user));
                 enterApp();
@@ -79,118 +104,108 @@
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('chat-page').classList.remove('hidden');
             document.getElementById('side-nav').classList.remove('hidden');
-            if ("Notification" in window) Notification.requestPermission();
-            loadMsgs();
-            refreshMembers();
-            setInterval(updatePresence, 30000);
-            sb.channel('main').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (p) => {
-                if(p.eventType === 'INSERT' && p.new.sender !== user.name) notifyUser(p.new);
-                loadMsgs();
-            }).subscribe();
-            sb.channel('users').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refreshMembers).subscribe();
+            loadMsgs(); refreshMembers(); updatePresence(); setInterval(updatePresence, 30000);
+            sb.channel('db').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
+            sb.channel('v').on('postgres_changes', { event: '*', schema: 'public', table: 'message_views' }, loadViews).subscribe();
+            sb.channel('t').on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingUI).subscribe();
+            loadViews();
         }
 
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-            if (data) render(data.filter(m => m.is_visible !== false));
+            if (data) {
+                const visible = data.filter(m => m.is_visible !== false);
+                render(visible);
+                markAsSeen(visible);
+            }
+        }
+
+        async function loadViews() {
+            const { data } = await sb.from('message_views').select('*');
+            allViews = data || [];
+            loadMsgs();
+        }
+
+        async function markAsSeen(msgs) {
+            const unseen = msgs.filter(m => m.sender !== user.name && !allViews.some(v => v.message_id === m.id && v.viewer_username === user.name));
+            for (let m of unseen) {
+                await sb.from('message_views').upsert({ message_id: m.id, viewer_username: user.name });
+            }
         }
 
         function render(data) {
             const box = document.getElementById('msg-box');
             box.innerHTML = data.map(m => {
-                const isAdmin = user.role === 'admin';
                 const isMine = m.sender === user.name;
+                const isAdmin = user.role === 'admin';
                 const isServer = m.sender === 'SYSTEM_LOG';
-                const timestamp = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const time = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const p = allProfiles.find(ap => ap.username === m.sender);
+                const views = allViews.filter(v => v.message_id === m.id);
+                const viewers = views.map(v => v.viewer_username).join('\n');
 
-                if (isServer) return `<div class="p-4 rounded-xl server-log text-[11px] text-blue-400 uppercase font-black">[LOG: ${timestamp}] — ${m.content}</div>`;
+                if (isServer) return `<div class="p-4 rounded-xl server-log text-[10px] text-blue-400 uppercase font-black tracking-widest">[SYSTEM LOG ${time}] — ${m.content}</div>`;
                 if (m.is_private && !isMine && m.receiver !== user.name && !isAdmin) return '';
-
+                
                 return `
-                <div id="msg-${m.id}" class="p-5 rounded-[30px] glass border border-white/5">
+                <div id="msg-${m.id}" class="p-5 rounded-[30px] glass ${m.is_private ? 'private-card' : ''} border border-white/5">
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex items-center gap-2">
-                            <span class="text-[11px] font-black uppercase tracking-tighter ${p?.color || 'text-white'}" onclick="quickAt('${m.sender}')">${m.sender}</span>
-                            <span class="text-[8px] font-bold text-gray-600 uppercase tracking-widest">${timestamp}</span>
+                            <span class="text-[11px] font-black uppercase ${p?.color || 'text-white'}">${m.sender}</span>
+                            <span class="text-[8px] font-bold text-gray-600 uppercase tracking-widest">${time}</span>
+                            ${views.length > 0 ? `<span class="seen-indicator" onclick="alert('Seen by:\\n${viewers}')">👁️ ${views.length}</span>` : ''}
                         </div>
-                        ${(isMine || isAdmin) ? `<div data-id="${m.id}" class="del-trigger">DELETE</div>` : ''}
+                        ${(isMine || isAdmin) ? `<div onclick="deleteMsg('${m.id}')" class="del-trigger">Delete</div>` : ''}
                     </div>
-                    <div class="text-[15px] text-gray-200 font-light">${m.content}</div>
+                    <div class="text-[15px] text-gray-200 font-light leading-relaxed">${m.content}</div>
                 </div>`;
             }).join('');
-            document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
+            box.parentElement.scrollTop = box.parentElement.scrollHeight;
         }
 
-        function notifyUser(msg) {
-            alertSound.play().catch(()=>{});
-            if (navigator.vibrate) navigator.vibrate(200);
-            if (document.hidden && Notification.permission === "granted") {
-                new Notification(`New Message: ${msg.sender}`, { body: msg.content });
-            }
-        }
-
-        async function sendMsg() {
-            const input = document.getElementById('msg-input');
-            const val = input.value.trim();
-            if (!val) return;
-            let sender = user.name, content = val, rec = 'all', is_p = false;
-
-            if (val.startsWith('/server') && user.role === 'admin') {
-                sender = 'SYSTEM_LOG';
-                content = val.replace('/server ', '');
-            } else if (val.startsWith('@')) {
-                const parts = val.split(' ');
-                rec = parts[0].substring(1);
-                content = parts.slice(1).join(' ');
-                is_p = true;
-            }
-
-            await sb.from('messages').insert([{ sender, content, receiver: rec, is_private: is_p, is_visible: true }]);
-            input.value = '';
-        }
-
-        async function toggleBan(username, currentStatus) {
-            if (user.role !== 'admin') return;
-            const action = currentStatus ? "UNBAN" : "BAN";
-            if (confirm(`${action} user ${username}?`)) {
-                await sb.from('profiles').update({ is_banned: !currentStatus }).eq('username', username);
-                alert(`USER ${action}NED`);
-            }
-        }
-
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('del-trigger')) executeDelete(e.target.getAttribute('data-id'));
-        });
-
-        async function executeDelete(id) {
-            const el = document.getElementById(`msg-${id}`);
-            if (el) el.style.opacity = '0';
+        async function deleteMsg(id) {
             await sb.from('messages').update({ is_visible: false }).eq('id', id);
         }
 
+        async function sendMsg() {
+            const i = document.getElementById('msg-input');
+            const v = i.value.trim(); if (!v) return;
+            let s = user.name, c = v, r = 'all', p = false;
+            if (v.startsWith('/server') && user.role === 'admin') { s = 'SYSTEM_LOG'; c = v.replace('/server ', ''); }
+            else if (v.startsWith('@')) { const pts = v.split(' '); r = pts[0].substring(1); c = pts.slice(1).join(' '); p = true; }
+            await sb.from('messages').insert([{ sender: s, content: c, receiver: r, is_private: p, is_visible: true }]);
+            i.value = ''; setTyping(false);
+        }
+
+        function handleTyping() { setTyping(true); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => setTyping(false), 2000); }
+        async function setTyping(v) { await sb.from('typing_status').upsert({ username: user.name, is_typing: v }); }
+        async function updateTypingUI() {
+            const { data } = await sb.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
+            const tb = document.getElementById('typing-box');
+            if (data?.length) { document.getElementById('typing-text').innerText = `${data[0].username} is typing...`; tb.style.opacity = "1"; }
+            else tb.style.opacity = "0";
+        }
+
+        async function updatePresence() { await sb.from('profiles').update({ last_seen: new Date() }).eq('username', user.name); }
+        async function updateMyStatus() { await sb.from('profiles').update({ status_text: document.getElementById('status-input').value }).eq('username', user.name); alert("SYNCED"); }
         async function refreshMembers() {
             const { data } = await sb.from('profiles').select('*').order('username', { ascending: true });
             allProfiles = data || [];
             document.getElementById('member-list').innerHTML = allProfiles.map(p => {
-                const online = (new Date() - new Date(p.last_seen)) / 1000 / 60 < 2;
-                return `
-                <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <span class="text-[12px] font-black uppercase ${p.color}">${p.username} ${p.is_banned ? '🔴' : ''}</span>
-                    <div class="flex items-center gap-3">
-                        ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] font-black ${p.is_banned ? 'text-green-500' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
-                        <div class="w-2.5 h-2.5 rounded-full ${online ? 'bg-green-500' : 'bg-gray-700'}"></div>
-                    </div>
+                const on = (new Date() - new Date(p.last_seen)) / 60000 < 2;
+                return `<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 mb-2 border border-white/5">
+                    <div class="flex items-center gap-3"><div class="w-2.5 h-2.5 rounded-full ${on ? 'bg-green-500' : 'bg-gray-700'}"></div>
+                    <div><p class="text-[12px] font-black uppercase ${p.color}">${p.username} ${p.is_banned ? '🔴' : ''}</p><p class="text-[10px] text-gray-500 italic">${p.status_text || 'Available'}</p></div></div>
+                    ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] font-black ${p.is_banned ? 'text-green-500' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
                 </div>`;
             }).join('');
         }
-
-        async function updatePresence() { await sb.from('profiles').update({ last_seen: new Date() }).eq('username', user.name); }
+        async function toggleBan(u, s) { if (confirm('Change user status?')) await sb.from('profiles').update({ is_banned: !s }).eq('username', u); }
         function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
-        function openCall() { window.open('https://meet.jit.si/ZyZenith_Elite', '_blank'); }
+        function openCall() { window.open('https://meet.jit.si/Zychat_Elite', '_blank'); }
         window.onload = () => { if(localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-    </html>
+</html>
