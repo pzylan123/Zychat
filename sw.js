@@ -1,14 +1,12 @@
-// sw.js - The Background Worker
+// sw.js - Put this in your root folder
 self.addEventListener('push', function(event) {
     const data = event.data.json();
     const options = {
-        body: data.content,
-        icon: '/icon.png', // Add an icon path here if you have one
-        badge: '/icon.png',
-        vibrate: [200, 100, 200],
-        data: { url: '/' }
+        body: data.body,
+        icon: 'https://img.icons8.com/color/96/000000/chat.png',
+        badge: 'https://img.icons8.com/color/96/000000/chat.png'
     };
     event.waitUntil(
-        self.registration.showNotification(`New Message from ${data.sender}`, options)
+        self.notificationPermission.showNotification('Zychat: ' + data.title, options)
     );
 });
