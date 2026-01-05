@@ -1,250 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    
-    // Step A: Initialize with your specific App ID
-    await OneSignal.init({
-      appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-      safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-      notifyButton: { enable: true }, // Adds the bell icon for manual retry
-      allowLocalhostAsSecureOrigin: true,
-    });
-
-    // Step B: Show a Debug Bar on your phone screen
-    const debugBar = document.createElement('div');
-    debugBar.style = "position:fixed;bottom:0;left:0;width:100%;z-index:9999;padding:10px;font-size:12px;color:white;background:rgba(0,0,0,0.8);word-break:break-all;";
-    debugBar.innerHTML = "Checking Status...";
-    document.body.appendChild(debugBar);
-
-    // Step C: Force-Subscribe Logic (Xiaomi workaround)
-    async function checkSubscription() {
-      const isSubscribed = await OneSignal.Notifications.permission;
-      const id = OneSignal.User.PushSubscription.id;
-
-      if (id) {
-        debugBar.style.background = "green";
-        debugBar.innerHTML = `✅ REGISTERED! ID: ${id}`;
-        console.log("OneSignal ID:", id);
-      } else if (isSubscribed) {
-        debugBar.style.background = "orange";
-        debugBar.innerHTML = "⚠️ Permission Granted, but no ID yet. Attempting Force-Sync...";
-        // This is the specific command to wake up Xiaomi background tasks
-        await OneSignal.User.PushSubscription.optIn(); 
-      } else {
-        debugBar.style.background = "red";
-        debugBar.innerHTML = "❌ Not Subscribed. Tap the Bell icon or Refresh.";
-      }
-    }
-
-    // Run the check every 5 seconds until it works
-    setInterval(checkSubscription, 5000);
-    checkSubscription();
-  });
-          </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zychat Elite</title>
-    
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-          safari_web_id: "optional_if_needed",
-          notifyButton: { enable: true },
-        });
-      });
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zychat | Push Test</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
-        :root { --accent: #3b82f6; --glass: rgba(255, 255, 255, 0.03); --border: rgba(255, 255, 255, 0.08); }
-        body { background: #06080c; color: #e2e8f0; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; margin: 0; }
-        .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--border); }
-        #msg-container { height: calc(100vh - 160px); overflow-y: auto; padding-bottom: 120px; scroll-behavior: smooth; }
-        .modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); align-items: center; justify-content: center; }
-        .modal.active { display: flex; }
-        #typing-box { position: absolute; bottom: 85px; left: 30px; pointer-events: none; transition: opacity 0.3s; z-index: 10; }
-        input::placeholder { color: rgba(255,255,255,0.2); }
-        @media (max-width: 768px) {
-            #side-nav { position: fixed; bottom: 0; width: 100%; height: 70px; flex-direction: row; justify-content: space-around; z-index: 1000; background: #06080c; border-top: 1px solid var(--border); }
-            #msg-container { height: calc(100vh - 170px); }
-            #typing-box { bottom: 165px; left: 25px; }
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #1a1a1a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .card { background: #2a2a2a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; border: 2px solid #444; }
+        #status-light { width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-right: 8px; background: grey; }
+        .btn { background: #5865F2; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; }
+        #id-box { font-family: monospace; font-size: 11px; background: #000; padding: 10px; margin-top: 15px; border-radius: 5px; word-break: break-all; color: #00ff00; display: none; }
     </style>
 </head>
-<body class="flex flex-col md:flex-row">
+<body>
 
-    <div id="status-modal" class="modal p-6"><div class="glass w-full max-w-md rounded-[40px] p-8">
-        <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black italic text-blue-500 uppercase tracking-widest">Directory</h3><button onclick="toggleModal('status-modal')" class="text-gray-500 font-bold">CLOSE</button></div>
-        <div id="member-list" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
-    </div></div>
-
-    <div id="login-page" class="fixed inset-0 z-[10000] flex items-center justify-center bg-[#06080c]">
-        <div class="glass p-10 rounded-[45px] w-full max-w-sm text-center mx-4 border-white/10 shadow-2xl">
-            <h1 class="text-6xl font-black mb-2 italic text-white tracking-tighter">ZY<span class="text-blue-500">CHAT</span></h1>
-            <p class="text-[10px] text-gray-500 font-bold tracking-[0.5em] mb-10 uppercase">Elite Messaging v16.1</p>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl glass text-white outline-none focus:border-blue-500 transition-all">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl glass text-white outline-none focus:border-blue-500 transition-all">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-2xl font-black transition-all shadow-lg shadow-blue-600/20">INITIALIZE</button>
+    <div class="card">
+        <h2>Zychat Push Tool</h2>
+        <div style="margin-bottom: 20px;">
+            <span id="status-light"></span>
+            <span id="status-text">Initializing...</span>
         </div>
+        
+        <div id="id-box"></div>
+
+        <button class="btn" onclick="subscribeUser()">ACTIVATE NOTIFICATIONS</button>
+        <p style="font-size: 12px; color: #888; margin-top: 15px;">Xiaomi Redmi Note 7 Pro detected.</p>
     </div>
 
-    <nav id="side-nav" class="hidden w-24 flex flex-col items-center py-10 glass">
-        <div class="mb-10 text-blue-500 font-black text-2xl italic underline decoration-4 underline-offset-8">ZC</div>
-        <button onclick="toggleModal('status-modal'); refreshMembers();" class="w-14 h-14 flex items-center justify-center text-xl mb-6 glass rounded-2xl hover:bg-blue-600/20 transition-all">👥</button>
-        <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/40 hover:text-red-500 uppercase tracking-widest transition-all">Logout</button>
-    </nav>
-
-    <main id="chat-page" class="hidden flex-1 flex flex-col relative">
-        <header class="h-16 flex items-center px-8 glass border-b border-white/5 justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span class="text-[10px] font-black tracking-[0.4em] text-blue-500 uppercase">System Active</span>
-            </div>
-            <span id="display-user" class="text-[10px] font-bold text-gray-500 uppercase">---</span>
-        </header>
-
-        <div id="msg-container"><div id="msg-box" class="p-6 space-y-6"></div></div>
-        
-        <div id="typing-box" class="text-[10px] text-blue-400 font-black italic opacity-0 bg-[#06080c] px-3 py-1 rounded-full border border-blue-500/20 shadow-xl">...</div>
-
-        <div class="fixed md:relative bottom-[85px] md:bottom-0 w-full p-4 bg-[#06080c]/80 backdrop-blur-md">
-            <div class="glass rounded-[30px] flex items-center px-6 py-1 border border-white/10 shadow-2xl">
-                <input id="msg-input" type="text" placeholder="Encrypted transmission..." class="flex-1 bg-transparent py-4 text-sm outline-none text-white" oninput="broadcastTyping()">
-                <button onclick="sendMsg()" class="text-blue-500 hover:text-white font-black text-xs px-4 transition-all">SEND</button>
-            </div>
-        </div>
-    </main>
-
     <script>
-        const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
-        const sb = supabase.createClient(SB_URL, SB_KEY);
-        let user = null, typingTimeout;
-
-        // AUTH SYSTEM
-        async function handleLogin() {
-            const n = document.getElementById('u-name').value.trim();
-            const p = document.getElementById('u-pass').value.trim();
-            const { data, error } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p).single();
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
             
-            if (data) {
-                if (data.is_banned) { alert("ERROR: ACCOUNT_TERMINATED"); return; }
-                user = { name: data.username, role: data.username === 'admin' ? 'admin' : 'user' };
-                localStorage.setItem('zy_session', JSON.stringify(user));
-                enterApp();
-            } else { alert("ACCESS DENIED: INVALID_CREDENTIALS"); }
+            // AUTOMATIC PATH DETECTION FOR GITHUB PAGES
+            const isGitHub = window.location.hostname.includes('github.io');
+            const path = isGitHub ? window.location.pathname.split('/')[1] + '/' : '';
+
+            await OneSignal.init({
+                appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+                safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+                // This tells OneSignal exactly where your file is on GitHub
+                serviceWorkerPath: 'OneSignalSDKWorker.js', 
+                allowLocalhostAsSecureOrigin: true,
+            });
+
+            updateDisplay();
+            // Check status every 4 seconds
+            setInterval(updateDisplay, 4000);
+        });
+
+        async function updateDisplay() {
+            OneSignalDeferred.push(async function(OneSignal) {
+                const id = OneSignal.User.PushSubscription.id;
+                const light = document.getElementById('status-light');
+                const text = document.getElementById('status-text');
+                const idBox = document.getElementById('id-box');
+
+                if (id) {
+                    light.style.background = "#00ff00"; // Green
+                    text.innerText = "ONLINE / REGISTERED";
+                    idBox.innerText = "ID: " + id;
+                    idBox.style.display = "block";
+                } else {
+                    const permission = await OneSignal.Notifications.permission;
+                    if (permission) {
+                        light.style.background = "orange";
+                        text.innerText = "BLOCKED BY SYSTEM (Xiaomi)";
+                    } else {
+                        light.style.background = "red";
+                        text.innerText = "NOT SUBSCRIBED";
+                    }
+                }
+            });
         }
 
-        function enterApp() {
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('chat-page').classList.remove('hidden');
-            document.getElementById('side-nav').classList.remove('hidden');
-            document.getElementById('display-user').innerText = `USER: ${user.name}`;
-            
-            loadMsgs();
-            refreshMembers();
-
-            // REALTIME SUBSCRIPTION
-            sb.channel('zy-elite')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (p) => {
-                    if(p.new.username === user.name && p.new.is_banned) location.reload();
-                    refreshMembers();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingUI)
-                .subscribe();
+        function subscribeUser() {
+            OneSignalDeferred.push(function(OneSignal) {
+                OneSignal.User.PushSubscription.optIn();
+            });
         }
-
-        // TYPING SYSTEM
-        async function broadcastTyping() {
-            await sb.from('typing_status').upsert({ username: user.name, is_typing: true });
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(async () => {
-                await sb.from('typing_status').upsert({ username: user.name, is_typing: false });
-            }, 2500);
-        }
-
-        async function updateTypingUI() {
-            const { data } = await sb.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
-            const box = document.getElementById('typing-box');
-            if (data?.length > 0) {
-                box.innerText = `${data[0].username.toUpperCase()} IS TYPING...`;
-                box.style.opacity = "1";
-            } else { box.style.opacity = "0"; }
-        }
-
-        // MESSAGING SYSTEM
-        async function loadMsgs() {
-            const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-            if (data) {
-                const box = document.getElementById('msg-box');
-                box.innerHTML = data.filter(m => m.is_visible).map(m => `
-                    <div class="p-5 rounded-[25px] glass border-white/5 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[11px] font-black uppercase ${m.sender === 'admin' ? 'text-blue-500' : 'text-blue-400/70'}">${m.sender}</span>
-                            <span class="text-[8px] text-gray-700 font-bold">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <div class="text-[14px] text-gray-200 leading-relaxed font-light">${m.content}</div>
-                    </div>
-                `).join('');
-                document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
-            }
-        }
-
-        async function sendMsg() {
-            const i = document.getElementById('msg-input');
-            const val = i.value.trim();
-            if (!val) return;
-
-            // Secure Check
-            const { data } = await sb.from('profiles').select('is_banned').eq('username', user.name).single();
-            if (data.is_banned) { location.reload(); return; }
-
-            await sb.from('messages').insert([{ sender: user.name, content: val, is_visible: true }]);
-            i.value = '';
-            await sb.from('typing_status').upsert({ username: user.name, is_typing: false });
-        }
-
-        // ADMIN: BANNING
-        async function toggleBan(target, current) {
-            if (user.role !== 'admin') return;
-            await sb.from('profiles').update({ is_banned: !current }).eq('username', target);
-            refreshMembers();
-        }
-
-        async function refreshMembers() {
-            const { data } = await sb.from('profiles').select('*').order('username');
-            if (data) {
-                document.getElementById('member-list').innerHTML = data.map(p => `
-                    <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 mb-2">
-                        <span class="text-sm font-bold ${p.is_banned ? 'text-red-500/50 line-through' : 'text-white'}">${p.username}</span>
-                        ${user.role === 'admin' && p.username !== 'admin' ? 
-                            `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[10px] font-black px-3 py-1 rounded-lg ${p.is_banned ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'}">${p.is_banned ? 'RESTORE' : 'TERMINATE'}</button>` : ''}
-                    </div>
-                `).join('');
-            }
-        }
-
-        // UTILS
-        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
-        function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
-        
-        window.onload = () => { 
-            const session = localStorage.getItem('zy_session');
-            if(session) { user = JSON.parse(session); enterApp(); } 
-        };
-        
-        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-    </html>
+</html>
