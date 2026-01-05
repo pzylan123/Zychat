@@ -3,79 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zychat Push Diagnostics</title>
+    <title>Zychat | System Fix</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
-<body style="background:#121212; color:white; font-family:sans-serif; text-align:center; padding:50px;">
+<body style="background:#0b0e11; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
 
-    <div style="border:1px solid #333; padding:30px; border-radius:15px; background:#1e1e1e; max-width:400px; margin:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <h2 style="margin-top:0;">Zychat Monitor</h2>
+    <div style="background:#15191c; padding:40px; border-radius:20px; text-align:center; border:1px solid #2d333b; width:320px;">
+        <h2 style="color:#5865F2;">Zychat Push</h2>
         
-        <div id="status-bar" style="height:60px; border-radius:8px; margin:20px 0; display:flex; align-items:center; justify-content:center; font-weight:bold; background:grey; transition: 0.3s;">
-            INITIALIZING...
+        <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px;">
+            SYSTEM: INITIALIZING...
         </div>
 
-        <p id="error-log" style="color:#ff6b6b; font-size:12px; font-family:monospace; min-height: 20px;"></p>
-        
-        <button onclick="subscribe()" style="background:#5865F2; color:white; border:none; padding:15px 25px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:16px;">
-            ACTIVATE PUSH
+        <p id="id-text" style="font-family:monospace; font-size:10px; color:#888; word-break:break-all;"></p>
+
+        <button onclick="requestPush()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px;">
+            FIX & ACTIVATE
         </button>
         
-        <p style="font-size:11px; color:#666; margin-top:20px;">Device: Redmi Note 7 Pro (MIUI)</p>
+        <p style="font-size:11px; color:#555; margin-top:20px;">Redmi Note 7 Pro Fix Applied</p>
     </div>
 
     <script>
         window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-            
-            // STEP 1: FIX GITHUB PATHS
-            // This detects if your site is username.github.io/RENAME/
-            const repoName = window.location.pathname.split('/')[1]; 
-            const isGitHub = window.location.hostname.includes('github.io');
-            
-            // On GitHub, scope must be '/repo-name/'
-            const finalScope = isGitHub ? `/${repoName}/` : '/';
+        
+        // AUTO-DETECT GITHUB REPO NAME
+        const currentPath = window.location.pathname;
+        const repoName = currentPath.split('/')[1]; 
+        const isGitHub = window.location.hostname.includes('github.io');
+        const finalScope = isGitHub ? `/${repoName}/` : '/';
 
+        OneSignalDeferred.push(async function(OneSignal) {
             try {
                 await OneSignal.init({
                     appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
                     safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-                    // Tells OneSignal exactly where the file is on GitHub
-                    serviceWorkerPath: 'OneSignalSDKWorker.js', 
-                    serviceWorkerParam: { scope: finalScope },
-                    allowLocalhostAsSecureOrigin: true,
+                    serviceWorkerPath: 'OneSignalSDKWorker.js', // File name in your repo
+                    serviceWorkerParam: { scope: finalScope }   // Tells browser to look in folder
                 });
 
-                // STEP 2: MONITOR STATUS
-                const updateUI = async () => {
-                    const subId = OneSignal.User.PushSubscription.id;
-                    const permission = await OneSignal.Notifications.permission;
-                    const bar = document.getElementById('status-bar');
+                const checkStatus = async () => {
+                    const id = OneSignal.User.PushSubscription.id;
+                    const statusBox = document.getElementById('status-box');
+                    const idText = document.getElementById('id-text');
 
-                    if (subId) {
-                        bar.style.backgroundColor = "#2ecc71"; // Green
-                        bar.innerText = "✅ ONLINE / CONNECTED";
-                    } else if (permission) {
-                        bar.style.backgroundColor = "#f39c12"; // Orange
-                        bar.innerText = "⚠️ XIAOMI BLOCKING ID";
+                    if (id) {
+                        statusBox.style.background = "#238636";
+                        statusBox.innerText = "✅ SYSTEM ONLINE";
+                        idText.innerText = "ID: " + id;
                     } else {
-                        bar.style.backgroundColor = "#e74c3c"; // Red
-                        bar.innerText = "❌ CLICK BUTTON TO ALLOW";
+                        const perm = await OneSignal.Notifications.permission;
+                        if (perm) {
+                            statusBox.style.background = "#d29922";
+                            statusBox.innerText = "⚠️ SYSTEM BLOCKED (MIUI)";
+                        } else {
+                            statusBox.style.background = "#da3633";
+                            statusBox.innerText = "❌ PERMISSION NEEDED";
+                        }
                     }
                 };
 
-                updateUI();
-                setInterval(updateUI, 3000);
+                checkStatus();
+                setInterval(checkStatus, 3000);
 
-            } catch (e) {
-                console.error(e);
-                document.getElementById('error-log').innerText = "ERROR: " + e.message;
-                document.getElementById('status-bar').style.backgroundColor = "#000";
-                document.getElementById('status-bar').innerText = "SETUP FAILED";
+            } catch (err) {
+                document.getElementById('status-box').innerText = "ERROR: Worker Registration Failed";
+                console.error("Worker Registration Failed:", err);
             }
         });
 
-        function subscribe() {
+        function requestPush() {
             OneSignalDeferred.push(function(OneSignal) {
                 OneSignal.User.PushSubscription.optIn();
             });
