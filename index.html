@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zychat | System Fix</title>
+    <title>Zychat | OneSignal Fix</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body style="background:#0b0e11; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
@@ -12,64 +12,69 @@
         <h2 style="color:#5865F2;">Zychat Push</h2>
         
         <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px;">
-            SYSTEM: INITIALIZING...
+            INITIALIZING...
         </div>
 
         <p id="id-text" style="font-family:monospace; font-size:10px; color:#888; word-break:break-all;"></p>
 
         <button onclick="requestPush()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px;">
-            FIX & ACTIVATE
+            ACTIVATE NOTIFICATIONS
         </button>
-        
-        <p style="font-size:11px; color:#555; margin-top:20px;">Redmi Note 7 Pro Fix Applied</p>
     </div>
 
     <script>
         window.OneSignalDeferred = window.OneSignalDeferred || [];
+        
+        OneSignalDeferred.push(async function(OneSignal) {
+            try {
+                // FORCE GITHUB PATHS
+                // Note the capital 'Z' in Zychat to match your Repo name
+                const repoPath = '/Zychat/'; 
 
-OneSignalDeferred.push(async function(OneSignal) {
-    const repoName = window.location.pathname.split('/')[1]; 
-    const isGitHub = window.location.hostname.includes('github.io');
-    const finalScope = isGitHub ? `/${repoName}/` : '/';
+                await OneSignal.init({
+                    appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+                    safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+                    serviceWorkerPath: 'OneSignalSDKWorker.js', 
+                    serviceWorkerParam: { scope: repoPath } 
+                });
 
-    try {
-        await OneSignal.init({
-            appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-            safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-            serviceWorkerPath: 'OneSignalSDKWorker.js',
-            serviceWorkerParam: { scope: finalScope }
+                const checkStatus = async () => {
+                    const id = OneSignal.User.PushSubscription.id;
+                    const statusBox = document.getElementById('status-box');
+                    const idText = document.getElementById('id-text');
+
+                    if (id) {
+                        statusBox.style.background = "#238636";
+                        statusBox.innerText = "✅ GREEN: REGISTERED";
+                        idText.innerText = "ID: " + id;
+                    } else {
+                        const perm = await OneSignal.Notifications.permission;
+                        if (perm) {
+                            statusBox.style.background = "#d29922";
+                            statusBox.innerText = "⚠️ SYSTEM BLOCKED (MIUI)";
+                            // Auto-retry opt-in for Xiaomi
+                            await OneSignal.User.PushSubscription.optIn();
+                        } else {
+                            statusBox.style.background = "#da3633";
+                            statusBox.innerText = "❌ CLICK TO ALLOW";
+                        }
+                    }
+                };
+
+                checkStatus();
+                setInterval(checkStatus, 3000);
+
+            } catch (err) {
+                document.getElementById('status-box').innerText = "PATH ERROR";
+                console.error(err);
+            }
         });
 
-        // XIAOMI SPECIFIC: Force a push subscription refresh
-        if (await OneSignal.Notifications.permission) {
-             console.log("Xiaomi detected - Forcing Background Sync");
-             await OneSignal.User.PushSubscription.optIn(); 
+        function requestPush() {
+            OneSignalDeferred.push(function(OneSignal) {
+                OneSignal.User.PushSubscription.optIn();
+            });
         }
-
-        const checkStatus = async () => {
-            const id = OneSignal.User.PushSubscription.id;
-            const statusBox = document.getElementById('status-box');
-            const idText = document.getElementById('id-text');
-
-            if (id) {
-                statusBox.style.background = "#238636";
-                statusBox.innerText = "✅ GREEN: CONNECTED";
-                idText.innerText = "YOUR ID: " + id;
-                // Once Green, Discord and Zychat will both work!
-            } else {
-                statusBox.style.background = "#d29922";
-                statusBox.innerText = "⚠️ ORANGE: RE-REGISTERING...";
-                // Try to force it every time it's orange
-                await OneSignal.User.PushSubscription.optIn();
-            }
-        };
-
-        checkStatus();
-        setInterval(checkStatus, 5000);
-    } catch (e) {
-        document.getElementById('status-box').innerText = "PATH ERROR";
-    }
-});
     </script>
 </body>
 </html>
