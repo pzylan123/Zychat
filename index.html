@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zychat | Fix</title>
+    <title>Zychat | Final Fix</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body style="background:#0b0e11; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
 
-    <div style="background:#15191c; padding:40px; border-radius:20px; text-align:center; border:1px solid #2d333b; width:320px;">
-        <h2 style="color:#5865F2;">Zychat Push</h2>
+    <div style="background:#15191c; padding:40px; border-radius:20px; text-align:center; border:1px solid #2d333b; width:340px;">
+        <h2 style="color:#5865F2; margin-bottom:5px;">Zychat Push</h2>
+        <p style="font-size:12px; color:#888; margin-bottom:20px;">Redmi Note 7 Pro Edition</p>
         
-        <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px;">
-            CONNECTING...
+        <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px; border: 1px solid #333;">
+            CHECKING WORKER...
         </div>
 
-        <p id="id-text" style="font-family:monospace; font-size:10px; color:#888; word-break:break-all;"></p>
+        <p id="id-text" style="font-family:monospace; font-size:10px; color:#5865F2; word-break:break-all; min-height:15px;"></p>
 
-        <button onclick="requestPush()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px;">
-            ENABLE NOTIFICATIONS
+        <button onclick="requestPush()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px; transition: 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+            FIX & ACTIVATE
         </button>
     </div>
 
@@ -26,33 +27,48 @@
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         
         OneSignalDeferred.push(async function(OneSignal) {
-            // Capital 'Z' to match your GitHub repo name
-            const repoPath = '/Zychat/'; 
+            try {
+                // We use '/Zychat/' because GitHub Pages is case-sensitive
+                const repoPath = '/Zychat/'; 
 
-            await OneSignal.init({
-                appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-                safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-                serviceWorkerPath: 'OneSignalSDKWorker.js',
-                serviceWorkerParam: { scope: repoPath }
-            });
+                await OneSignal.init({
+                    appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+                    safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+                    // This MUST match your file name on GitHub
+                    serviceWorkerPath: 'OneSignalSDKWorker.js', 
+                    serviceWorkerParam: { scope: repoPath } 
+                });
 
-            const checkStatus = async () => {
-                const id = OneSignal.User.PushSubscription.id;
-                const statusBox = document.getElementById('status-box');
+                const checkStatus = async () => {
+                    const id = OneSignal.User.PushSubscription.id;
+                    const statusBox = document.getElementById('status-box');
+                    
+                    if (id) {
+                        statusBox.style.background = "#238636";
+                        statusBox.style.borderColor = "#2ea043";
+                        statusBox.innerText = "✅ ONLINE: ID ACTIVE";
+                        document.getElementById('id-text').innerText = "ID: " + id;
+                    } else {
+                        const perm = await OneSignal.Notifications.permission;
+                        if (perm) {
+                            statusBox.style.background = "#d29922";
+                            statusBox.innerText = "⚠️ SYSTEM BLOCKED (MIUI)";
+                            // Critical for Xiaomi: Keep trying to "wake up" the worker
+                            await OneSignal.User.PushSubscription.optIn();
+                        } else {
+                            statusBox.style.background = "#da3633";
+                            statusBox.innerText = "❌ CLICK TO ALLOW";
+                        }
+                    }
+                };
 
-                if (id) {
-                    statusBox.style.background = "#238636";
-                    statusBox.innerText = "✅ SYSTEM ONLINE";
-                    document.getElementById('id-text').innerText = "ID: " + id;
-                } else {
-                    const perm = await OneSignal.Notifications.permission;
-                    statusBox.style.background = perm ? "#d29922" : "#da3633";
-                    statusBox.innerText = perm ? "⚠️ SYSTEM BLOCKED (MIUI)" : "❌ PERMISSION NEEDED";
-                }
-            };
+                checkStatus();
+                setInterval(checkStatus, 4000);
 
-            checkStatus();
-            setInterval(checkStatus, 3000);
+            } catch (err) {
+                document.getElementById('status-box').innerText = "ERROR: RENAME THE FILE";
+                console.error("Worker Error:", err);
+            }
         });
 
         function requestPush() {
