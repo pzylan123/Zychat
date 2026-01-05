@@ -3,22 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zychat | Fix</title>
+    <title>Zychat | MIUI Fix</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body style="background:#0b0e11; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
-
     <div style="background:#15191c; padding:40px; border-radius:20px; text-align:center; border:1px solid #2d333b; width:320px;">
         <h2 style="color:#5865F2;">Zychat Push</h2>
-        
-        <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px;">
-            CONNECTING...
+        <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px; transition: 0.5s;">
+            WAKING UP SYSTEM...
         </div>
-
         <p id="id-text" style="font-family:monospace; font-size:10px; color:#888; word-break:break-all;"></p>
-
-        <button onclick="requestPush()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px;">
-            ENABLE NOTIFICATIONS
+        <button onclick="forceOptIn()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px;">
+            FORCE ACTIVATE
         </button>
     </div>
 
@@ -26,38 +22,34 @@
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         
         OneSignalDeferred.push(async function(OneSignal) {
-            // Capital 'Z' to match your GitHub repo name
-            const repoPath = '/Zychat/'; 
-
             await OneSignal.init({
                 appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
                 safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
                 serviceWorkerPath: 'OneSignalSDKWorker.js',
-                serviceWorkerParam: { scope: repoPath }
+                serviceWorkerParam: { scope: '/Zychat/' }
             });
 
-            const checkStatus = async () => {
+            const check = async () => {
                 const id = OneSignal.User.PushSubscription.id;
                 const statusBox = document.getElementById('status-box');
-
                 if (id) {
                     statusBox.style.background = "#238636";
                     statusBox.innerText = "✅ SYSTEM ONLINE";
                     document.getElementById('id-text').innerText = "ID: " + id;
                 } else {
-                    const perm = await OneSignal.Notifications.permission;
-                    statusBox.style.background = perm ? "#d29922" : "#da3633";
-                    statusBox.innerText = perm ? "⚠️ SYSTEM BLOCKED (MIUI)" : "❌ PERMISSION NEEDED";
+                    statusBox.style.background = "#d29922";
+                    statusBox.innerText = "⚠️ SYSTEM BLOCKED (MIUI)";
+                    // This forces the "Allow" prompt to re-trigger
+                    OneSignal.User.PushSubscription.optIn();
                 }
             };
-
-            checkStatus();
-            setInterval(checkStatus, 3000);
+            setInterval(check, 5000);
         });
 
-        function requestPush() {
+        function forceOptIn() {
             OneSignalDeferred.push(function(OneSignal) {
                 OneSignal.User.PushSubscription.optIn();
+                alert("If the browser asks, tap ALLOW. If not, check your App Permissions for Chrome.");
             });
         }
     </script>
