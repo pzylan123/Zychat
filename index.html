@@ -3,71 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zychat | Push Test</title>
-
+    <title>Zychat Push Diagnostics</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #1a1a1a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-        .card { background: #2a2a2a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; border: 2px solid #444; }
-        #status-light { width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-right: 8px; background: grey; }
-        .btn { background: #5865F2; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; }
-        #id-box { font-family: monospace; font-size: 11px; background: #000; padding: 10px; margin-top: 15px; border-radius: 5px; word-break: break-all; color: #00ff00; display: none; }
-    </style>
 </head>
-<body>
+<body style="background:#121212; color:white; font-family:sans-serif; text-align:center; padding:50px;">
 
-    <div class="card">
-        <h2>Zychat Push Tool</h2>
-        <div style="margin-bottom: 20px;">
-            <span id="status-light"></span>
-            <span id="status-text">Initializing...</span>
-        </div>
+    <div style="border:1px solid #333; padding:30px; border-radius:15px; background:#1e1e1e; max-width:400px; margin:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h2 style="margin-top:0;">Zychat Monitor</h2>
         
-        <div id="id-box"></div>
+        <div id="status-bar" style="height:60px; border-radius:8px; margin:20px 0; display:flex; align-items:center; justify-content:center; font-weight:bold; background:grey; transition: 0.3s;">
+            INITIALIZING...
+        </div>
 
-        <button class="btn" onclick="subscribeUser()">ACTIVATE NOTIFICATIONS</button>
-        <p style="font-size: 12px; color: #888; margin-top: 15px;">Xiaomi Redmi Note 7 Pro detected.</p>
+        <p id="error-log" style="color:#ff6b6b; font-size:12px; font-family:monospace; min-height: 20px;"></p>
+        
+        <button onclick="subscribe()" style="background:#5865F2; color:white; border:none; padding:15px 25px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:16px;">
+            ACTIVATE PUSH
+        </button>
+        
+        <p style="font-size:11px; color:#666; margin-top:20px;">Device: Redmi Note 7 Pro (MIUI)</p>
     </div>
 
     <script>
-        console.log("Script Started");
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+            
+            // STEP 1: FIX GITHUB PATHS
+            // This detects if your site is username.github.io/RENAME/
+            const repoName = window.location.pathname.split('/')[1]; 
+            const isGitHub = window.location.hostname.includes('github.io');
+            
+            // On GitHub, scope must be '/repo-name/'
+            const finalScope = isGitHub ? `/${repoName}/` : '/';
 
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
-    console.log("OneSignal loaded, starting init...");
-    
-    try {
-        await OneSignal.init({
-            OneSignalDeferred.push(async function(OneSignal) {
-        appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-        safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-        
-        // IMPORTANT: Replace 'zychat' with your actual GitHub repository name
-        serviceWorkerPath: 'OneSignalSDKWorker.js', 
-        serviceWorkerParam: { scope: '/zychat/' }, 
-    });
-});
-    
-        
-        console.log("Init complete!");
-        document.getElementById('status-text').innerText = "Init Done. Checking ID...";
-        
-        const id = OneSignal.User.PushSubscription.id;
-        if (id) {
-            document.getElementById('status-text').innerText = "REGISTERED!";
-            document.getElementById('id-box').innerText = id;
-            document.getElementById('id-box').style.display = "block";
-            document.getElementById('status-light').style.background = "green";
-        } else {
-            document.getElementById('status-text').innerText = "Ready. Tap the Bell icon.";
-            document.getElementById('status-light').style.background = "red";
+            try {
+                await OneSignal.init({
+                    appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+                    safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+                    // Tells OneSignal exactly where the file is on GitHub
+                    serviceWorkerPath: 'OneSignalSDKWorker.js', 
+                    serviceWorkerParam: { scope: finalScope },
+                    allowLocalhostAsSecureOrigin: true,
+                });
+
+                // STEP 2: MONITOR STATUS
+                const updateUI = async () => {
+                    const subId = OneSignal.User.PushSubscription.id;
+                    const permission = await OneSignal.Notifications.permission;
+                    const bar = document.getElementById('status-bar');
+
+                    if (subId) {
+                        bar.style.backgroundColor = "#2ecc71"; // Green
+                        bar.innerText = "✅ ONLINE / CONNECTED";
+                    } else if (permission) {
+                        bar.style.backgroundColor = "#f39c12"; // Orange
+                        bar.innerText = "⚠️ XIAOMI BLOCKING ID";
+                    } else {
+                        bar.style.backgroundColor = "#e74c3c"; // Red
+                        bar.innerText = "❌ CLICK BUTTON TO ALLOW";
+                    }
+                };
+
+                updateUI();
+                setInterval(updateUI, 3000);
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('error-log').innerText = "ERROR: " + e.message;
+                document.getElementById('status-bar').style.backgroundColor = "#000";
+                document.getElementById('status-bar').innerText = "SETUP FAILED";
+            }
+        });
+
+        function subscribe() {
+            OneSignalDeferred.push(function(OneSignal) {
+                OneSignal.User.PushSubscription.optIn();
+            });
         }
-    } catch (e) {
-        console.error("OneSignal Error:", e);
-        document.getElementById('status-text').innerText = "ERROR: " + e.message;
-    }
-});
     </script>
 </body>
 </html>
