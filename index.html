@@ -23,53 +23,49 @@
 
     <script>
         window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+OneSignalDeferred.push(async function(OneSignal) {
+    // Explicitly define the GitHub Pages subfolder
+    const folder = '/Zychat/'; 
+
+    await OneSignal.init({
+        appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+        safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
         
-        async function initOneSignal() {
-            try {
-                await OneSignal.init({
-                    appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-                    safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-                    serviceWorkerPath: 'OneSignalSDKWorker.js',
-                    serviceWorkerParam: { scope: '/Zychat/' }
-                });
+        // Use ABSOLUTE paths to avoid "Registration failed"
+        serviceWorkerPath: 'OneSignalSDKWorker.js', 
+        serviceWorkerParam: { scope: folder },
+        
+        // This ensures the SDK looks in the right folder for the script
+        notificationServiceWorkerPath: 'OneSignalSDKWorker.js',
+        notificationServiceWorkerParam: { scope: folder }
+    });
 
-                updateStatus();
-            } catch (e) {
-                document.getElementById('debug-log').innerText = "ERROR: " + e.message;
-            }
-        }
-
-        async function updateStatus() {
-            const statusBox = document.getElementById('status-box');
-            const id = OneSignal.User.PushSubscription.id;
-            
-            if (id) {
-                statusBox.style.background = "#238636";
-                statusBox.innerText = "✅ SYSTEM ONLINE";
-                document.getElementById('debug-log').innerText = "ID: " + id;
-            } else {
-                const perm = await OneSignal.Notifications.permission;
-                if (!perm) {
-                    statusBox.style.background = "#da3633";
-                    statusBox.innerText = "❌ CLICK BUTTON";
-                } else {
-                    statusBox.style.background = "#d29922";
-                    statusBox.innerText = "⚠️ RE-LINKING TO GOOGLE...";
-                    // Try to force the link since FCM is now working
-                    await OneSignal.User.PushSubscription.optIn();
-                }
-            }
-        }
-
-        function subscribeUser() {
-            OneSignalDeferred.push(async function(OneSignal) {
+    const checkStatus = async () => {
+        const id = OneSignal.User.PushSubscription.id;
+        const statusBox = document.getElementById('status-box');
+        
+        if (id) {
+            statusBox.style.background = "#238636";
+            statusBox.innerText = "✅ SYSTEM ONLINE";
+            document.getElementById('id-text').innerText = "ID: " + id;
+        } else {
+            // Xiaomi/MIUI Force Trigger
+            const perm = await OneSignal.Notifications.permission;
+            if (perm) {
+                statusBox.style.background = "#d29922";
+                statusBox.innerText = "⚠️ SYNCING WITH GOOGLE...";
                 await OneSignal.User.PushSubscription.optIn();
-                updateStatus();
-            });
+            } else {
+                statusBox.style.background = "#da3633";
+                statusBox.innerText = "❌ CLICK ACTIVATE";
+            }
         }
+    };
 
-        OneSignalDeferred.push(initOneSignal);
-        setInterval(updateStatus, 3000);
+    checkStatus();
+    setInterval(checkStatus, 3000);
+});
     </script>
 </body>
 </html>
