@@ -39,13 +39,16 @@ OneSignalDeferred.push(async function(OneSignal) {
     
     try {
         await OneSignal.init({
-            appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-            safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-            notifyButton: { enable: true },
-            // This line is specifically for GitHub Pages:
-            serviceWorkerParam: { scope: "/" }, 
-            serviceWorkerPath: "OneSignalSDKWorker.js", 
-        });
+            OneSignalDeferred.push(async function(OneSignal) {
+        appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+        safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+        
+        // IMPORTANT: Replace 'zychat' with your actual GitHub repository name
+        serviceWorkerPath: 'OneSignalSDKWorker.js', 
+        serviceWorkerParam: { scope: '/zychat/' }, 
+    });
+});
+    
         
         console.log("Init complete!");
         document.getElementById('status-text').innerText = "Init Done. Checking ID...";
