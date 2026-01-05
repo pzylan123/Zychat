@@ -3,55 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zychat | MIUI Fix</title>
+    <title>Zychat | System Active</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body style="background:#0b0e11; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
     <div style="background:#15191c; padding:40px; border-radius:20px; text-align:center; border:1px solid #2d333b; width:320px;">
-        <h2 style="color:#5865F2;">Zychat Push</h2>
-        <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px; transition: 0.5s;">
-            WAKING UP SYSTEM...
+        <h2 style="color:#5865F2; margin:0;">Zychat</h2>
+        <p style="font-size:10px; color:#555; margin-bottom:20px;">FCM CONNECTION: ACTIVE</p>
+        
+        <div id="status-box" style="padding:15px; border-radius:10px; background:#222; margin:20px 0; font-weight:bold; font-size:14px;">
+            WAITING FOR BROWSER...
         </div>
-        <p id="id-text" style="font-family:monospace; font-size:10px; color:#888; word-break:break-all;"></p>
-        <button onclick="forceOptIn()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px;">
-            FORCE ACTIVATE
+
+        <button onclick="subscribeUser()" style="background:#5865F2; color:white; border:none; padding:15px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">
+            ACTIVATE NOW
         </button>
+        <p id="debug-log" style="font-size:10px; color:#888; margin-top:15px; font-family:monospace;"></p>
     </div>
 
     <script>
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         
-        OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-                appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-                safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-                serviceWorkerPath: 'OneSignalSDKWorker.js',
-                serviceWorkerParam: { scope: '/Zychat/' }
-            });
+        async function initOneSignal() {
+            try {
+                await OneSignal.init({
+                    appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+                    safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+                    serviceWorkerPath: 'OneSignalSDKWorker.js',
+                    serviceWorkerParam: { scope: '/Zychat/' }
+                });
 
-            const check = async () => {
-                const id = OneSignal.User.PushSubscription.id;
-                const statusBox = document.getElementById('status-box');
-                if (id) {
-                    statusBox.style.background = "#238636";
-                    statusBox.innerText = "✅ SYSTEM ONLINE";
-                    document.getElementById('id-text').innerText = "ID: " + id;
+                updateStatus();
+            } catch (e) {
+                document.getElementById('debug-log').innerText = "ERROR: " + e.message;
+            }
+        }
+
+        async function updateStatus() {
+            const statusBox = document.getElementById('status-box');
+            const id = OneSignal.User.PushSubscription.id;
+            
+            if (id) {
+                statusBox.style.background = "#238636";
+                statusBox.innerText = "✅ SYSTEM ONLINE";
+                document.getElementById('debug-log').innerText = "ID: " + id;
+            } else {
+                const perm = await OneSignal.Notifications.permission;
+                if (!perm) {
+                    statusBox.style.background = "#da3633";
+                    statusBox.innerText = "❌ CLICK BUTTON";
                 } else {
                     statusBox.style.background = "#d29922";
-                    statusBox.innerText = "⚠️ SYSTEM BLOCKED (MIUI)";
-                    // This forces the "Allow" prompt to re-trigger
-                    OneSignal.User.PushSubscription.optIn();
+                    statusBox.innerText = "⚠️ RE-LINKING TO GOOGLE...";
+                    // Try to force the link since FCM is now working
+                    await OneSignal.User.PushSubscription.optIn();
                 }
-            };
-            setInterval(check, 5000);
-        });
+            }
+        }
 
-        function forceOptIn() {
-            OneSignalDeferred.push(function(OneSignal) {
-                OneSignal.User.PushSubscription.optIn();
-                alert("If the browser asks, tap ALLOW. If not, check your App Permissions for Chrome.");
+        function subscribeUser() {
+            OneSignalDeferred.push(async function(OneSignal) {
+                await OneSignal.User.PushSubscription.optIn();
+                updateStatus();
             });
         }
+
+        OneSignalDeferred.push(initOneSignal);
+        setInterval(updateStatus, 3000);
     </script>
 </body>
 </html>
