@@ -31,56 +31,40 @@
     </div>
 
     <script>
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-            
-            // AUTOMATIC PATH DETECTION FOR GITHUB PAGES
-            const isGitHub = window.location.hostname.includes('github.io');
-            const path = isGitHub ? window.location.pathname.split('/')[1] + '/' : '';
+        console.log("Script Started");
 
-            await OneSignal.init({
-                appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-                safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-                // This tells OneSignal exactly where your file is on GitHub
-                serviceWorkerPath: 'OneSignalSDKWorker.js', 
-                allowLocalhostAsSecureOrigin: true,
-            });
-
-            updateDisplay();
-            // Check status every 4 seconds
-            setInterval(updateDisplay, 4000);
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
+    console.log("OneSignal loaded, starting init...");
+    
+    try {
+        await OneSignal.init({
+            appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+            safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+            notifyButton: { enable: true },
+            // This line is specifically for GitHub Pages:
+            serviceWorkerParam: { scope: "/" }, 
+            serviceWorkerPath: "OneSignalSDKWorker.js", 
         });
-
-        async function updateDisplay() {
-            OneSignalDeferred.push(async function(OneSignal) {
-                const id = OneSignal.User.PushSubscription.id;
-                const light = document.getElementById('status-light');
-                const text = document.getElementById('status-text');
-                const idBox = document.getElementById('id-box');
-
-                if (id) {
-                    light.style.background = "#00ff00"; // Green
-                    text.innerText = "ONLINE / REGISTERED";
-                    idBox.innerText = "ID: " + id;
-                    idBox.style.display = "block";
-                } else {
-                    const permission = await OneSignal.Notifications.permission;
-                    if (permission) {
-                        light.style.background = "orange";
-                        text.innerText = "BLOCKED BY SYSTEM (Xiaomi)";
-                    } else {
-                        light.style.background = "red";
-                        text.innerText = "NOT SUBSCRIBED";
-                    }
-                }
-            });
+        
+        console.log("Init complete!");
+        document.getElementById('status-text').innerText = "Init Done. Checking ID...";
+        
+        const id = OneSignal.User.PushSubscription.id;
+        if (id) {
+            document.getElementById('status-text').innerText = "REGISTERED!";
+            document.getElementById('id-box').innerText = id;
+            document.getElementById('id-box').style.display = "block";
+            document.getElementById('status-light').style.background = "green";
+        } else {
+            document.getElementById('status-text').innerText = "Ready. Tap the Bell icon.";
+            document.getElementById('status-light').style.background = "red";
         }
-
-        function subscribeUser() {
-            OneSignalDeferred.push(function(OneSignal) {
-                OneSignal.User.PushSubscription.optIn();
-            });
-        }
+    } catch (e) {
+        console.error("OneSignal Error:", e);
+        document.getElementById('status-text').innerText = "ERROR: " + e.message;
+    }
+});
     </script>
 </body>
 </html>
