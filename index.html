@@ -26,57 +26,50 @@
 
     <script>
         window.OneSignalDeferred = window.OneSignalDeferred || [];
-        
-        // AUTO-DETECT GITHUB REPO NAME
-        const currentPath = window.location.pathname;
-        const repoName = currentPath.split('/')[1]; 
-        const isGitHub = window.location.hostname.includes('github.io');
-        const finalScope = isGitHub ? `/${repoName}/` : '/';
 
-        OneSignalDeferred.push(async function(OneSignal) {
-            try {
-                await OneSignal.init({
-                    appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-                    safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
-                    serviceWorkerPath: 'OneSignalSDKWorker.js', // File name in your repo
-                    serviceWorkerParam: { scope: finalScope }   // Tells browser to look in folder
-                });
+OneSignalDeferred.push(async function(OneSignal) {
+    const repoName = window.location.pathname.split('/')[1]; 
+    const isGitHub = window.location.hostname.includes('github.io');
+    const finalScope = isGitHub ? `/${repoName}/` : '/';
 
-                const checkStatus = async () => {
-                    const id = OneSignal.User.PushSubscription.id;
-                    const statusBox = document.getElementById('status-box');
-                    const idText = document.getElementById('id-text');
-
-                    if (id) {
-                        statusBox.style.background = "#238636";
-                        statusBox.innerText = "✅ SYSTEM ONLINE";
-                        idText.innerText = "ID: " + id;
-                    } else {
-                        const perm = await OneSignal.Notifications.permission;
-                        if (perm) {
-                            statusBox.style.background = "#d29922";
-                            statusBox.innerText = "⚠️ SYSTEM BLOCKED (MIUI)";
-                        } else {
-                            statusBox.style.background = "#da3633";
-                            statusBox.innerText = "❌ PERMISSION NEEDED";
-                        }
-                    }
-                };
-
-                checkStatus();
-                setInterval(checkStatus, 3000);
-
-            } catch (err) {
-                document.getElementById('status-box').innerText = "ERROR: Worker Registration Failed";
-                console.error("Worker Registration Failed:", err);
-            }
+    try {
+        await OneSignal.init({
+            appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
+            safari_web_id: "web.onesignal.auto.0640d2f0-7856-4c2f-b485-6187b4b1a20c",
+            serviceWorkerPath: 'OneSignalSDKWorker.js',
+            serviceWorkerParam: { scope: finalScope }
         });
 
-        function requestPush() {
-            OneSignalDeferred.push(function(OneSignal) {
-                OneSignal.User.PushSubscription.optIn();
-            });
+        // XIAOMI SPECIFIC: Force a push subscription refresh
+        if (await OneSignal.Notifications.permission) {
+             console.log("Xiaomi detected - Forcing Background Sync");
+             await OneSignal.User.PushSubscription.optIn(); 
         }
+
+        const checkStatus = async () => {
+            const id = OneSignal.User.PushSubscription.id;
+            const statusBox = document.getElementById('status-box');
+            const idText = document.getElementById('id-text');
+
+            if (id) {
+                statusBox.style.background = "#238636";
+                statusBox.innerText = "✅ GREEN: CONNECTED";
+                idText.innerText = "YOUR ID: " + id;
+                // Once Green, Discord and Zychat will both work!
+            } else {
+                statusBox.style.background = "#d29922";
+                statusBox.innerText = "⚠️ ORANGE: RE-REGISTERING...";
+                // Try to force it every time it's orange
+                await OneSignal.User.PushSubscription.optIn();
+            }
+        };
+
+        checkStatus();
+        setInterval(checkStatus, 5000);
+    } catch (e) {
+        document.getElementById('status-box').innerText = "PATH ERROR";
+    }
+});
     </script>
 </body>
 </html>
