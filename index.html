@@ -1,18 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignal.NOT.js" async=""></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "ca79f9f6-e0fb-4c7e-b94c-cce09002ea00",
-      // IMPORTANT: Tell OneSignal where the file is
-      serviceWorkerPath: "OneSignalSDKWorker.js", 
-      serviceWorkerParam: { scope: "/Zychat/" }, 
-      notifyButton: {
-        enable: true,
-      },
     });
   });
 </script>
