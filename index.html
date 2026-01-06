@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZyChat Zenith Elite V16.1</title>
+    <title>ZyChat Zenith Elite V16.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -27,7 +27,7 @@
 <body class="flex flex-col md:flex-row">
 
     <div id="status-modal" class="modal p-6"><div class="glass w-full max-w-md rounded-[40px] p-8 shadow-2xl">
-        <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black italic tracking-tighter text-blue-500">ZENITH DIRECTORY</h3><button onclick="toggleModal('status-modal')" class="text-gray-500 font-bold">CLOSE</button></div>
+        <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black italic text-blue-500">ZENITH DIRECTORY</h3><button onclick="toggleModal('status-modal')" class="text-gray-500">CLOSE</button></div>
         <div class="mb-8">
             <label class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Update Bio</label>
             <div class="flex gap-2 mt-2">
@@ -43,74 +43,103 @@
             <h1 class="text-5xl font-black mb-8 italic tracking-tighter">ZY<span class="text-blue-500">ZENITH</span></h1>
             <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl glass outline-none text-white">
             <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl glass outline-none text-white">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold">INITIALIZE</button>
+            <button id="login-btn" onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold">INITIALIZE</button>
         </div>
     </div>
 
     <nav id="side-nav" class="hidden w-24 flex flex-col items-center py-10 glass">
         <div class="mb-10 text-blue-500 font-black text-xl italic">ZZ</div>
-        <button onclick="requestPush()" id="notif-btn" title="Enable Notifications" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">🔔</button>
+        <button onclick="requestPush()" id="notif-btn" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">🔔</button>
         <button onclick="toggleModal('status-modal'); refreshMembers();" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">👥</button>
-        <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase tracking-widest">Logout</button>
+        <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase">Logout</button>
     </nav>
 
     <main id="chat-page" class="hidden flex-1 flex flex-col relative">
         <header class="h-16 flex items-center px-8 glass border-b border-white/5 justify-between">
-            <span class="text-[10px] font-black tracking-[0.4em] text-blue-500 uppercase">Sector_Elite_V16.1</span>
-            <div class="flex items-center gap-2"><div id="pulse-dot" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[10px] font-bold text-gray-400">ENCRYPTED</span></div>
+            <span class="text-[10px] font-black tracking-[0.4em] text-blue-500 uppercase">Sector_Elite_V16.2</span>
+            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[10px] font-bold text-gray-400">ENCRYPTED</span></div>
         </header>
-
         <div id="msg-container"><div id="msg-box" class="p-6 space-y-6"></div></div>
-
         <div id="typing-box" class="text-[10px] text-blue-400 font-bold italic transition-opacity opacity-0"><span id="typing-text">Someone is typing...</span></div>
-
         <div class="fixed md:relative bottom-[85px] md:bottom-0 w-full p-4 bg-[#06080c]/80 backdrop-blur-md">
             <div class="glass rounded-[30px] flex items-center px-6 py-1 border border-white/10 shadow-2xl">
-                <input id="msg-input" type="text" placeholder="Type a message or @username..." class="flex-1 bg-transparent py-4 text-sm outline-none text-white" oninput="handleTyping()">
+                <input id="msg-input" type="text" placeholder="Message..." class="flex-1 bg-transparent py-4 text-sm outline-none text-white" oninput="handleTyping()">
                 <button onclick="sendMsg()" class="text-blue-500 font-black text-xs px-4 tracking-widest">SEND</button>
             </div>
         </div>
     </main>
 
     <script>
-        const SB_URL = 'YOUR_SUPABASE_URL';
-        const SB_KEY = 'YOUR_SUPABASE_KEY';
-        const sb = supabase.createClient(SB_URL, SB_KEY);
-        let user = null, typingTimeout;
+        // --- CONFIGURATION ---
+        const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
+        
+        // Use a single consistent name for the client
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        let user = null;
+        let typingTimeout;
 
+        // --- AUTH ---
         async function handleLogin() {
+            const btn = document.getElementById('login-btn');
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
-            const { data } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p);
-            if (data?.length) {
-                if(data[0].is_banned) return alert("YOUR ACCESS IS REVOKED (BANNED)");
-                user = { name: data[0].username, role: data[0].username === 'admin' ? 'admin' : 'user', color: data[0].color || 'text-white' };
+            if (!n || !p) return alert("Enter credentials");
+
+            btn.innerText = "LOADING...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await supabaseClient.from('profiles').select('*').ilike('username', n).eq('password', p).single();
+                
+                if (error || !data) {
+                    alert("Denied: Wrong user/pass");
+                    btn.innerText = "INITIALIZE";
+                    btn.disabled = false;
+                    return;
+                }
+
+                if (data.is_banned) return alert("ACCOUNT BANNED");
+
+                user = { 
+                    name: data.username, 
+                    role: data.username === 'admin' ? 'admin' : 'user', 
+                    color: data.color || 'text-white' 
+                };
+                
                 localStorage.setItem('zy_session', JSON.stringify(user));
                 enterApp();
-            } else { alert("ACCESS DENIED"); }
+            } catch (e) {
+                console.error(e);
+                btn.disabled = false;
+                btn.innerText = "INITIALIZE";
+            }
         }
 
         async function enterApp() {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('chat-page').classList.remove('hidden');
             document.getElementById('side-nav').classList.remove('hidden');
-            loadMsgs(); refreshMembers(); updatePresence();
-            setInterval(updatePresence, 30000); // Pulse presence every 30s
             
-            sb.channel('db').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
-            sb.channel('t').on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingUI).subscribe();
+            loadMsgs(); 
+            refreshMembers(); 
+            updatePresence();
+            setInterval(updatePresence, 30000);
+            
+            supabaseClient.channel('realtime_msg').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
+            supabaseClient.channel('realtime_typing').on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingUI).subscribe();
         }
 
+        // --- MESSAGING ---
         async function loadMsgs() {
-            // FIX: Show history where visible is true OR null (newly inserted)
-            const { data } = await sb.from('messages')
+            const { data } = await supabaseClient.from('messages')
                 .select('*')
                 .or('is_visible.eq.true,is_visible.is.null')
                 .order('created_at', { ascending: true });
-            if (data) render(data);
+            if (data) renderMessages(data);
         }
 
-        function render(data) {
+        function renderMessages(data) {
             const box = document.getElementById('msg-box');
             box.innerHTML = data.map(m => {
                 const isMine = m.sender === user.name;
@@ -143,46 +172,43 @@
             if (v.startsWith('/server') && user.role === 'admin') { s = 'SYSTEM_LOG'; c = v.replace('/server ', ''); isSrv = true; }
             else if (v.startsWith('@')) { const pts = v.split(' '); r = pts[0].substring(1); c = pts.slice(1).join(' '); p = true; }
 
-            await sb.from('messages').insert([{ 
-                sender: s, content: c, receiver: r, is_private: p, is_visible: true, is_server: isSrv 
-            }]);
-            i.value = ''; setTyping(false);
+            await supabaseClient.from('messages').insert([{ sender: s, content: c, receiver: r, is_private: p, is_visible: true, is_server: isSrv }]);
+            i.value = '';
         }
 
-        // --- PRESENCE & TYPING ---
-        function handleTyping() { setTyping(true); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => setTyping(false), 2000); }
-        async function setTyping(v) { await sb.from('typing_status').upsert({ username: user.name, is_typing: v }); }
-        async function updateTypingUI() {
-            const { data } = await sb.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
-            const tb = document.getElementById('typing-box');
-            if (data?.length) { document.getElementById('typing-text').innerText = `${data[0].username} is typing...`; tb.style.opacity = "1"; }
-            else tb.style.opacity = "0";
-        }
-
-        async function updatePresence() { await sb.from('profiles').update({ last_seen: new Date().toISOString() }).eq('username', user.name); }
-        async function updateMyStatus() { await sb.from('profiles').update({ status_text: document.getElementById('status-input').value }).eq('username', user.name); alert("SYNCED"); refreshMembers(); }
-
+        // --- PRESENCE & UTILS ---
+        async function updatePresence() { await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('username', user.name); }
+        async function updateMyStatus() { await supabaseClient.from('profiles').update({ status_text: document.getElementById('status-input').value }).eq('username', user.name); alert("Bio Updated"); refreshMembers(); }
+        
         async function refreshMembers() {
-            const { data } = await sb.from('profiles').select('*').order('username', { ascending: true });
+            const { data } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
             document.getElementById('member-list').innerHTML = (data || []).map(p => {
                 const isOnline = (new Date() - new Date(p.last_seen)) / 1000 < 120;
                 return `<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 mb-2 border border-white/5">
-                    <div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_8px_green]' : 'bg-gray-700'}"></div>
-                    <div><p class="text-[12px] font-black uppercase ${p.color || 'text-white'}">${p.username} ${p.is_banned ? '🚫' : ''}</p><p class="text-[10px] text-gray-500 italic">${p.status_text || (isOnline ? 'Online' : 'Offline')}</p></div></div>
-                    ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] font-black ${p.is_banned ? 'text-green-500' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
+                    <div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-700'}"></div>
+                    <div><p class="text-[12px] font-black uppercase ${p.color || 'text-white'}">${p.username}</p><p class="text-[10px] text-gray-500 italic">${p.status_text || 'Active'}</p></div></div>
+                    ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] ${p.is_banned ? 'text-green-400' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
                 </div>`;
             }).join('');
         }
 
-        async function toggleBan(u, s) { if (confirm('Modify Status?')) await sb.from('profiles').update({ is_banned: !s }).eq('username', u); refreshMembers(); }
-        async function deleteMsg(id) { await sb.from('messages').update({ is_visible: false }).eq('id', id); loadMsgs(); }
+        function handleTyping() { setTyping(true); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => setTyping(false), 2000); }
+        async function setTyping(v) { await supabaseClient.from('typing_status').upsert({ username: user.name, is_typing: v }); }
+        async function updateTypingUI() {
+            const { data } = await supabaseClient.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
+            const tb = document.getElementById('typing-box');
+            tb.style.opacity = (data?.length) ? "1" : "0";
+            if(data?.length) document.getElementById('typing-text').innerText = `${data[0].username} is typing...`;
+        }
 
+        async function deleteMsg(id) { await supabaseClient.from('messages').update({ is_visible: false }).eq('id', id); loadMsgs(); }
+        async function toggleBan(u, s) { await supabaseClient.from('profiles').update({ is_banned: !s }).eq('username', u); refreshMembers(); }
         async function requestPush() {
             const permission = await Notification.requestPermission();
             if (permission === 'granted' && 'serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js');
                 document.getElementById('notif-btn').classList.add('text-green-500');
-                alert("Zenith Linked.");
+                alert("Linked to Zenith Alerts.");
             }
         }
 
@@ -192,4 +218,4 @@
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-</html>
+    </html>
