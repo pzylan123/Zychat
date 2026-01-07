@@ -176,19 +176,5 @@
         window.onload = () => { if(localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
-
-    <script src="https://cdn.by.wonderpush.com/sdk/1.1/wonderpush-loader.min.js" async></script>
-    <script>
-        window.WonderPush = window.WonderPush || [];
-        WonderPush.push(["init", {
-            "webKey": "9d13e46eb3abbeac49bfd319530eff708338f6a142941a48ffdffad55b4eccc7",
-            "resourcePath": "/Zychat/",
-            "serviceWorkerURL": "/Zychat/wonderpush-worker-loader.min.js"
-        }]);
-
-        function subscribeUser() {
-            WonderPush.push(["subscribe"]);
-        }
-    </script>
 </body>
             </html>
