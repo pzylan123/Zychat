@@ -220,7 +220,10 @@
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
     <script>
-(function (w, d, s, id) {
+         navigator.serviceWorker.register('webpushr-sw.js', {scope: '/Zychat/'})
+  .then(reg => alert('SW Success: ' + reg.scope))
+  .catch(err => alert('SW Error: ' + err));
+        (function (w, d, s, id) {
     if (typeof (w.webpushr) !== 'undefined') return; 
     w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
     var js, fjs = d.getElementsByTagName(s)[0]; 
