@@ -178,65 +178,63 @@
             i.value = '';
         }
 
-        // --- PRESENCE & UTILS ---
-        async function updatePresence() { await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('username', user.name); }
-        async function updateMyStatus() { await supabaseClient.from('profiles').update({ status_text: document.getElementById('status-input').value }).eq('username', user.name); alert("Bio Updated"); refreshMembers(); }
-        
-        async function refreshMembers() {
-            const { data } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
-            document.getElementById('member-list').innerHTML = (data || []).map(p => {
-                const isOnline = (new Date() - new Date(p.last_seen)) / 1000 < 120;
-                return `<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 mb-2 border border-white/5">
-                    <div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-700'}"></div>
-                    <div><p class="text-[12px] font-black uppercase ${p.color || 'text-white'}">${p.username}</p><p class="text-[10px] text-gray-500 italic">${p.status_text || 'Active'}</p></div></div>
-                    ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] ${p.is_banned ? 'text-green-400' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
-                </div>`;
-            }).join('');
-        }
+// --- PRESENCE & UTILS ---
+        async function updatePresence() { await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('username', user.name); }
+        async function updateMyStatus() { await supabaseClient.from('profiles').update({ status_text: document.getElementById('status-input').value }).eq('username', user.name); alert("Bio Updated"); refreshMembers(); }
+        
+        async function refreshMembers() {
+            const { data } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
+            document.getElementById('member-list').innerHTML = (data || []).map(p => {
+                const isOnline = (new Date() - new Date(p.last_seen)) / 1000 < 120;
+                return `<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 mb-2 border border-white/5">
+                    <div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-700'}"></div>
+                    <div><p class="text-[12px] font-black uppercase ${p.color || 'text-white'}">${p.username}</p><p class="text-[10px] text-gray-500 italic">${p.status_text || 'Active'}</p></div></div>
+                    ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] ${p.is_banned ? 'text-green-400' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
+                </div>`;
+            }).join('');
+        }
 
-        function handleTyping() { setTyping(true); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => setTyping(false), 2000); }
-        async function setTyping(v) { await supabaseClient.from('typing_status').upsert({ username: user.name, is_typing: v }); }
-        async function updateTypingUI() {
-            const { data } = await supabaseClient.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
-            const tb = document.getElementById('typing-box');
-            tb.style.opacity = (data?.length) ? "1" : "0";
-            if(data?.length) document.getElementById('typing-text').innerText = `${data[0].username} is typing...`;
-        }
+        function handleTyping() { setTyping(true); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => setTyping(false), 2000); }
+        async function setTyping(v) { await supabaseClient.from('typing_status').upsert({ username: user.name, is_typing: v }); }
+        async function updateTypingUI() {
+            const { data } = await supabaseClient.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
+            const tb = document.getElementById('typing-box');
+            tb.style.opacity = (data?.length) ? "1" : "0";
+            if(data?.length) document.getElementById('typing-text').innerText = `${data[0].username} is typing...`;
+        }
 
-        async function deleteMsg(id) { await supabaseClient.from('messages').update({ is_visible: false }).eq('id', id); loadMsgs(); }
-        async function toggleBan(u, s) { await supabaseClient.from('profiles').update({ is_banned: !s }).eq('username', u); refreshMembers(); }
-     
-
-        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
-        function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
+        async function deleteMsg(id) { await supabaseClient.from('messages').update({ is_visible: false }).eq('id', id); loadMsgs(); }
+        async function toggleBan(u, s) { await supabaseClient.from('profiles').update({ is_banned: !s }).eq('username', u); refreshMembers(); }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
+        function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
+        
         window.onload = () => { if(localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
-        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
+        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
+    </script>
+
     <script>
-// CLEAN START: Register the specific Webpushr Worker for your Zychat folder
-navigator.serviceWorker.register('webpushr-sw.js', {scope: '/Zychat/'})
-    .then(function(reg) {
-        console.log('Zenith SW Active:', reg.scope);
-        
-        // Load Webpushr SDK
-        (function (w, d, s, id) {
-            if (typeof (w.webpushr) !== 'undefined') return; 
-            w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
-            var js, fjs = d.getElementsByTagName(s)[0]; 
-            js = d.createElement(s); js.id = id; js.async = 1;
-            js.src = "https://cdn.webpushr.com/app.min.js"; 
-            fjs.parentNode.insertBefore(js, fjs);
-        }(window, document, 'script', 'webpushr-jssdk'));
+    // --- WEBPUSHR SYSTEM ---
+    navigator.serviceWorker.register('webpushr-sw.js', {scope: '/Zychat/'})
+        .then(function(reg) {
+            console.log('Zenith SW Active:', reg.scope);
+            
+            (function (w, d, s, id) {
+                if (typeof (w.webpushr) !== 'undefined') return; 
+                w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
+                var js, fjs = d.getElementsByTagName(s)[0]; 
+                js = d.createElement(s); js.id = id; js.async = 1;
+                js.src = "https://cdn.webpushr.com/app.min.js"; 
+                fjs.parentNode.insertBefore(js, fjs);
+            }(window, document, 'script', 'webpushr-jssdk'));
 
-        // Initialize with Subdirectory settings
-        webpushr('init', 'BBU40IVPq_PejbAqjTNP62dEi2lfLiq7eUpLIqY-Pk4z4GzkngQqT9PUe74N01-shLkZ6FZvkAG4j9PzYw439GI', { 
-            serviceWorkerPath: 'webpushr-sw.js',
-            serviceWorkerParam: { scope: '/Zychat/' }
-        });
-    })
-    .catch(function(err) {
-        alert("Worker Failed: " + err);
-    });
-</script>
-
+            webpushr('init', 'BBU40IVPq_PejbAqjTNP62dEi2lfLiq7eUpLIqY-Pk4z4GzkngQqT9PUe74N01-shLkZ6FZvkAG4j9PzYw439GI', { 
+                serviceWorkerPath: 'webpushr-sw.js',
+                serviceWorkerParam: { scope: '/Zychat/' }
+            });
+        })
+        .catch(function(err) {
+            console.log("Worker Registration Check: " + err);
+        });
+    </script>
 </body>
-    </html>
+</html>
