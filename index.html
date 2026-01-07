@@ -176,28 +176,7 @@
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
         window.onload = () => { if(localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
-    </script> <script>
-    // WEBPUSHR SYSTEM
-    navigator.serviceWorker.register('webpushr-sw.js', {scope: '/Zychat/'})
-        .then(function(reg) {
-            console.log('Zenith SW Active:', reg.scope);
-            (function (w, d, s, id) {
-                if (typeof (w.webpushr) !== 'undefined') return; 
-                w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
-                var js, fjs = d.getElementsByTagName(s)[0]; 
-                js = d.createElement(s); js.id = id; js.async = 1;
-                js.src = "https://cdn.webpushr.com/app.min.js"; 
-                fjs.parentNode.insertBefore(js, fjs);
-            }(window, document, 'script', 'webpushr-jssdk'));
-
-            webpushr('init', 'BBU40IVPq_PejbAqjTNP62dEi2lfLiq7eUpLIqY-Pk4z4GzkngQqT9PUe74N01-shLkZ6FZvkAG4j9PzYw439GI', { 
-                serviceWorkerPath: 'webpushr-sw.js',
-                serviceWorkerParam: { scope: '/Zychat/' }
-            });
-        })
-        .catch(function(err) {
-            console.log("Worker Failed: " + err);
-        });
-    </script>
+    </script> 
+    <!-- start webpushr code --> <script>(function(w,d, s, id) {if(typeof(w.webpushr)!=='undefined') return;w.webpushr=w.webpushr||function(){(w.webpushr.q=w.webpushr.q||[]).push(arguments)};var js, fjs = d.getElementsByTagName(s)[0];js = d.createElement(s); js.id = id;js.async=1;js.src = "https://cdn.webpushr.com/app.min.js";fjs.parentNode.appendChild(js);}(window,document, 'script', 'webpushr-jssdk'));webpushr('setup',{'key':'BBV-MGU-wixpkVbS3kU81wU4d7KKXtoUXAASA9IKPhxzXHcMo_0l8OvfMgpwrBvq1b10tn0zHRBXWqtIlN2FUiI' });</script><!-- end webpushr code -->
 </body>
 </html>
