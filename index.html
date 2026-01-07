@@ -24,7 +24,6 @@
         }
     </style>
 </head>
-    
 <body class="flex flex-col md:flex-row">
 
     <div id="status-modal" class="modal p-6"><div class="glass w-full max-w-md rounded-[40px] p-8 shadow-2xl">
@@ -50,7 +49,7 @@
 
     <nav id="side-nav" class="hidden w-24 flex flex-col items-center py-10 glass">
         <div class="mb-10 text-blue-500 font-black text-xl italic">ZZ</div>
-        <button onclick="webpushr('fetch_prompt')" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">🔔</button>
+        <button onclick="subscribeUser()" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">🔔</button>
         <button onclick="toggleModal('status-modal'); refreshMembers();" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">👥</button>
         <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase">Logout</button>
     </nav>
@@ -176,12 +175,20 @@
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
         window.onload = () => { if(localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
-  <script src="https://cdn.by.wonderpush.com/sdk/1.1/wonderpush-loader.min.js" async></script>
-<script>
-window.WonderPush = window.WonderPush || [];
-WonderPush.push(["init", {
-    webKey: "9d13e46eb3abbeac49bfd319530eff708338f6a142941a48ffdffad55b4eccc7",
-}]);
-</script>
-    </body>
-</html>
+    </script>
+
+    <script src="https://cdn.by.wonderpush.com/sdk/1.1/wonderpush-loader.min.js" async></script>
+    <script>
+        window.WonderPush = window.WonderPush || [];
+        WonderPush.push(["init", {
+            "webKey": "9d13e46eb3abbeac49bfd319530eff708338f6a142941a48ffdffad55b4eccc7",
+            "resourcePath": "/Zychat/",
+            "serviceWorkerURL": "/Zychat/wonderpush-worker-loader.min.js"
+        }]);
+
+        function subscribeUser() {
+            WonderPush.push(["subscribe"]);
+        }
+    </script>
+</body>
+            </html>
