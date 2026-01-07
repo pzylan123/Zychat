@@ -49,7 +49,9 @@
 
     <nav id="side-nav" class="hidden w-24 flex flex-col items-center py-10 glass">
         <div class="mb-10 text-blue-500 font-black text-xl italic">ZZ</div>
-        <button onclick="subscribeUser()" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">🔔</button>
+        
+        <button onclick="startVideoCall()" title="Start Video Call" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl hover:bg-blue-500/20 transition-all border border-blue-500/30">📹</button>
+        
         <button onclick="toggleModal('status-modal'); refreshMembers();" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">👥</button>
         <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase">Logout</button>
     </nav>
@@ -77,6 +79,31 @@
         let user = null;
         let typingTimeout;
 
+        // --- NEW: JITSI VIDEO CALL LOGIC ---
+        function startVideoCall() {
+            if (!user) return alert("Please login first");
+            
+            // Generate a unique room name for Zenith
+            const roomName = "ZyZenith_Main_Sector";
+            const jitsiUrl = `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&userInfo.displayName="${user.name}"`;
+            
+            // Open Jitsi in a new tab
+            window.open(jitsiUrl, '_blank');
+            
+            // Log to chat that a call was started
+            sendMsgServer(`SYSTEM: ${user.name} initiated a video call.`);
+        }
+
+        async function sendMsgServer(content) {
+             await supabaseClient.from('messages').insert([{ 
+                sender: 'SYSTEM', 
+                content: content, 
+                is_server: true, 
+                is_visible: true 
+            }]);
+        }
+
+        // --- REST OF CHAT LOGIC ---
         async function handleLogin() {
             const btn = document.getElementById('login-btn');
             const n = document.getElementById('u-name').value.trim();
@@ -177,4 +204,4 @@
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-            </html>
+    </html>
