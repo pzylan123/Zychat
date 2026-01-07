@@ -219,23 +219,30 @@
         window.onload = () => { if(localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
-    <script>
-         navigator.serviceWorker.register('webpushr-sw.js', {scope: '/Zychat/'})
-  .then(reg => alert('SW Success: ' + reg.scope))
-  .catch(err => alert('SW Error: ' + err));
+<script>
+// 1. First, we manually try to find the worker file
+navigator.serviceWorker.register('webpushr-sw.js', {scope: '/Zychat/'})
+    .then(function(reg) {
+        console.log('SW Registered');
+        // 2. If registration works, start Webpushr
         (function (w, d, s, id) {
-    if (typeof (w.webpushr) !== 'undefined') return; 
-    w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
-    var js, fjs = d.getElementsByTagName(s)[0]; 
-    js = d.createElement(s); js.id = id; js.async = 1;
-    js.src = "https://cdn.webpushr.com/app.min.js"; 
-    fjs.parentNode.insertBefore(js, fjs);
-}(window, document, 'script', 'webpushr-jssdk'));
+            if (typeof (w.webpushr) !== 'undefined') return; 
+            w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
+            var js, fjs = d.getElementsByTagName(s)[0]; 
+            js = d.createElement(s); js.id = id; js.async = 1;
+            js.src = "https://cdn.webpushr.com/app.min.js"; 
+            fjs.parentNode.insertBefore(js, fjs);
+        }(window, document, 'script', 'webpushr-jssdk'));
 
-webpushr('init', 'BBU40IVPq_PejbAqjTNP62dEi2lfLiq7eUpLIqY-Pk4z4GzkngQqT9PUe74N01-shLkZ6FZvkAG4j9PzYw439GI', {
-    serviceWorkerPath: '/webpushr-sw.js', // Note the '/' at the start
-    scope: '/Zychat/' 
-});
-    </script>
+        webpushr('init', 'YOUR_PUBLIC_KEY', {
+            serviceWorkerPath: 'webpushr-sw.js',
+            serviceWorkerParam: { scope: '/Zychat/' }
+        });
+    })
+    .catch(function(err) {
+        // THIS WILL TELL US THE PROBLEM
+        alert("CRITICAL ERROR: " + err);
+    });
+</script>
 </body>
     </html>
