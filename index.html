@@ -27,7 +27,6 @@
     
 <body class="flex flex-col md:flex-row">
 
-   <button onclick="webpushr('fetch_prompt')">Click to Subscribe</button>
     <div id="status-modal" class="modal p-6"><div class="glass w-full max-w-md rounded-[40px] p-8 shadow-2xl">
         <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black italic text-blue-500">ZENITH DIRECTORY</h3><button onclick="toggleModal('status-modal')" class="text-gray-500">CLOSE</button></div>
         <div class="mb-8">
@@ -51,7 +50,7 @@
 
     <nav id="side-nav" class="hidden w-24 flex flex-col items-center py-10 glass">
         <div class="mb-10 text-blue-500 font-black text-xl italic">ZZ</div>
-        <button onclick="webpushr('fetch_prompt')"w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">🔔</button>
+        <button onclick="webpushr('fetch_prompt')" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">🔔</button>
         <button onclick="toggleModal('status-modal'); refreshMembers();" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl">👥</button>
         <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase">Logout</button>
     </nav>
@@ -75,69 +74,44 @@
         // --- CONFIGURATION ---
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
-        
-        // Use a single consistent name for the client
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
         let user = null;
         let typingTimeout;
 
-        // --- AUTH ---
         async function handleLogin() {
             const btn = document.getElementById('login-btn');
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
             if (!n || !p) return alert("Enter credentials");
-
             btn.innerText = "LOADING...";
             btn.disabled = true;
-
             try {
                 const { data, error } = await supabaseClient.from('profiles').select('*').ilike('username', n).eq('password', p).single();
-                
                 if (error || !data) {
                     alert("Denied: Wrong user/pass");
                     btn.innerText = "INITIALIZE";
                     btn.disabled = false;
                     return;
                 }
-
                 if (data.is_banned) return alert("ACCOUNT BANNED");
-
-                user = { 
-                    name: data.username, 
-                    role: data.username === 'admin' ? 'admin' : 'user', 
-                    color: data.color || 'text-white' 
-                };
-                
+                user = { name: data.username, role: data.username === 'admin' ? 'admin' : 'user', color: data.color || 'text-white' };
                 localStorage.setItem('zy_session', JSON.stringify(user));
                 enterApp();
-            } catch (e) {
-                console.error(e);
-                btn.disabled = false;
-                btn.innerText = "INITIALIZE";
-            }
+            } catch (e) { console.error(e); btn.disabled = false; btn.innerText = "INITIALIZE"; }
         }
 
         async function enterApp() {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('chat-page').classList.remove('hidden');
             document.getElementById('side-nav').classList.remove('hidden');
-            
-            loadMsgs(); 
-            refreshMembers(); 
-            updatePresence();
+            loadMsgs(); refreshMembers(); updatePresence();
             setInterval(updatePresence, 30000);
-            
             supabaseClient.channel('realtime_msg').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
             supabaseClient.channel('realtime_typing').on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingUI).subscribe();
         }
 
-        // --- MESSAGING ---
         async function loadMsgs() {
-            const { data } = await supabaseClient.from('messages')
-                .select('*')
-                .or('is_visible.eq.true,is_visible.is.null')
-                .order('created_at', { ascending: true });
+            const { data } = await supabaseClient.from('messages').select('*').or('is_visible.eq.true,is_visible.is.null').order('created_at', { ascending: true });
             if (data) renderMessages(data);
         }
 
@@ -147,12 +121,9 @@
                 const isMine = m.sender === user.name;
                 const isAdmin = user.role === 'admin';
                 const time = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
                 if (m.is_server) return `<div class="p-4 rounded-xl server-log text-[10px] text-blue-400 uppercase font-black">[SYSTEM LOG ${time}] — ${m.content}</div>`;
                 if (m.is_private && !isMine && m.receiver !== user.name && !isAdmin) return '';
-
-                return `
-                <div class="p-5 rounded-[30px] glass ${m.is_private ? 'private-card' : ''} border border-white/5">
+                return `<div class="p-5 rounded-[30px] glass ${m.is_private ? 'private-card' : ''} border border-white/5">
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex items-center gap-2">
                             <span class="text-[11px] font-black uppercase ${m.sender === 'admin' ? 'text-yellow-500' : (isMine ? 'text-blue-400' : 'text-white')}">${m.sender} ${m.sender === 'admin' ? '👑' : ''}</span>
@@ -170,71 +141,63 @@
             const i = document.getElementById('msg-input');
             const v = i.value.trim(); if (!v) return;
             let s = user.name, c = v, r = 'all', p = false, isSrv = false;
-
             if (v.startsWith('/server') && user.role === 'admin') { s = 'SYSTEM_LOG'; c = v.replace('/server ', ''); isSrv = true; }
             else if (v.startsWith('@')) { const pts = v.split(' '); r = pts[0].substring(1); c = pts.slice(1).join(' '); p = true; }
-
             await supabaseClient.from('messages').insert([{ sender: s, content: c, receiver: r, is_private: p, is_visible: true, is_server: isSrv }]);
             i.value = '';
         }
 
-// --- PRESENCE & UTILS ---
-        async function updatePresence() { await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('username', user.name); }
-        async function updateMyStatus() { await supabaseClient.from('profiles').update({ status_text: document.getElementById('status-input').value }).eq('username', user.name); alert("Bio Updated"); refreshMembers(); }
-        
-        async function refreshMembers() {
-            const { data } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
-            document.getElementById('member-list').innerHTML = (data || []).map(p => {
-                const isOnline = (new Date() - new Date(p.last_seen)) / 1000 < 120;
-                return `<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 mb-2 border border-white/5">
-                    <div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-700'}"></div>
-                    <div><p class="text-[12px] font-black uppercase ${p.color || 'text-white'}">${p.username}</p><p class="text-[10px] text-gray-500 italic">${p.status_text || 'Active'}</p></div></div>
-                    ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] ${p.is_banned ? 'text-green-400' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
-                </div>`;
-            }).join('');
-        }
+        async function updatePresence() { await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('username', user.name); }
+        async function updateMyStatus() { await supabaseClient.from('profiles').update({ status_text: document.getElementById('status-input').value }).eq('username', user.name); alert("Bio Updated"); refreshMembers(); }
+        async function refreshMembers() {
+            const { data } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
+            document.getElementById('member-list').innerHTML = (data || []).map(p => {
+                const isOnline = (new Date() - new Date(p.last_seen)) / 1000 < 120;
+                return `<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 mb-2 border border-white/5">
+                    <div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-700'}"></div>
+                    <div><p class="text-[12px] font-black uppercase ${p.color || 'text-white'}">${p.username}</p><p class="text-[10px] text-gray-500 italic">${p.status_text || 'Active'}</p></div></div>
+                    ${(user.role === 'admin' && p.username !== 'admin') ? `<button onclick="toggleBan('${p.username}', ${p.is_banned})" class="text-[9px] ${p.is_banned ? 'text-green-400' : 'text-red-500'}">${p.is_banned ? 'UNBAN' : 'BAN'}</button>` : ''}
+                </div>`;
+            }).join('');
+        }
 
-        function handleTyping() { setTyping(true); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => setTyping(false), 2000); }
-        async function setTyping(v) { await supabaseClient.from('typing_status').upsert({ username: user.name, is_typing: v }); }
-        async function updateTypingUI() {
-            const { data } = await supabaseClient.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
-            const tb = document.getElementById('typing-box');
-            tb.style.opacity = (data?.length) ? "1" : "0";
-            if(data?.length) document.getElementById('typing-text').innerText = `${data[0].username} is typing...`;
-        }
+        function handleTyping() { setTyping(true); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => setTyping(false), 2000); }
+        async function setTyping(v) { await supabaseClient.from('typing_status').upsert({ username: user.name, is_typing: v }); }
+        async function updateTypingUI() {
+            const { data } = await supabaseClient.from('typing_status').select('username').eq('is_typing', true).neq('username', user.name);
+            const tb = document.getElementById('typing-box');
+            tb.style.opacity = (data?.length) ? "1" : "0";
+            if(data?.length) document.getElementById('typing-text').innerText = `${data[0].username} is typing...`;
+        }
 
-        async function deleteMsg(id) { await supabaseClient.from('messages').update({ is_visible: false }).eq('id', id); loadMsgs(); }
-        async function toggleBan(u, s) { await supabaseClient.from('profiles').update({ is_banned: !s }).eq('username', u); refreshMembers(); }
-        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
-        function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
-        
+        async function deleteMsg(id) { await supabaseClient.from('messages').update({ is_visible: false }).eq('id', id); loadMsgs(); }
+        async function toggleBan(u, s) { await supabaseClient.from('profiles').update({ is_banned: !s }).eq('username', u); refreshMembers(); }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
+        function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
         window.onload = () => { if(localStorage.getItem('zy_session')) { user = JSON.parse(localStorage.getItem('zy_session')); enterApp(); } };
-        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
-    </script>
-
-    <script>
-    // --- WEBPUSHR SYSTEM ---
+        document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
+    </script> <script>
+    // WEBPUSHR SYSTEM
     navigator.serviceWorker.register('webpushr-sw.js', {scope: '/Zychat/'})
-        .then(function(reg) {
-            console.log('Zenith SW Active:', reg.scope);
-            
-            (function (w, d, s, id) {
-                if (typeof (w.webpushr) !== 'undefined') return; 
-                w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
-                var js, fjs = d.getElementsByTagName(s)[0]; 
-                js = d.createElement(s); js.id = id; js.async = 1;
-                js.src = "https://cdn.webpushr.com/app.min.js"; 
-                fjs.parentNode.insertBefore(js, fjs);
-            }(window, document, 'script', 'webpushr-jssdk'));
+        .then(function(reg) {
+            console.log('Zenith SW Active:', reg.scope);
+            (function (w, d, s, id) {
+                if (typeof (w.webpushr) !== 'undefined') return; 
+                w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments); };
+                var js, fjs = d.getElementsByTagName(s)[0]; 
+                js = d.createElement(s); js.id = id; js.async = 1;
+                js.src = "https://cdn.webpushr.com/app.min.js"; 
+                fjs.parentNode.insertBefore(js, fjs);
+            }(window, document, 'script', 'webpushr-jssdk'));
 
-            webpushr('init', 'BBU40IVPq_PejbAqjTNP62dEi2lfLiq7eUpLIqY-Pk4z4GzkngQqT9PUe74N01-shLkZ6FZvkAG4j9PzYw439GI', { 
-                serviceWorkerPath: 'webpushr-sw.js',
-                serviceWorkerParam: { scope: '/Zychat/' }
-            });
-        })
-        .catch(function(err) {
-            console.log("Worker Registration Check: " + err);
-        });
+            webpushr('init', 'BBU40IVPq_PejbAqjTNP62dEi2lfLiq7eUpLIqY-Pk4z4GzkngQqT9PUe74N01-shLkZ6FZvkAG4j9PzYw439GI', { 
+                serviceWorkerPath: 'webpushr-sw.js',
+                serviceWorkerParam: { scope: '/Zychat/' }
+            });
+        })
+        .catch(function(err) {
+            console.log("Worker Failed: " + err);
+        });
     </script>
 </body>
 </html>
