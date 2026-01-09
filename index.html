@@ -200,22 +200,32 @@ setTimeout(() => {
         }
 
         async function send() {
-           // Paste this AT THE START of the send function so it feels instant
-const box = document.getElementById('msg-container');
-box.scrollTo({top: box.scrollHeight + 500, behavior: 'smooth'});
-            const i = document.getElementById('msg-input'), v = i.value.trim(); if(!v) return;
-            let receiver = 'all', is_private = false, content = v;
-            if (v.startsWith('@')) { const pts = v.split(' '); receiver = pts[0].substring(1); content = pts.slice(1).join(' '); is_private = true; }
-            
-            const { error } = await sb.from('messages').insert([{ sender: user.username, content, receiver, is_private }]);
-            if(!error) {
-                i.value = '';
-                loadMsgs(); // Optimistic Load
-            }
-            const box = document.getElementById('msg-container');
-box.scrollTop = box.scrollHeight;
-        }
+    const i = document.getElementById('msg-input'), v = i.value.trim(); 
+    if(!v) return;
 
+    const box = document.getElementById('msg-container');
+    
+    // Step 1: UI Feedback - scroll down immediately
+    box.scrollTo({top: box.scrollHeight + 500, behavior: 'smooth'});
+
+    let receiver = 'all', is_private = false, content = v;
+    if (v.startsWith('@')) { 
+        const pts = v.split(' '); 
+        receiver = pts[0].substring(1); 
+        content = pts.slice(1).join(' '); 
+        is_private = true; 
+    }
+    
+    // Step 2: Clear input early for "speed" feel
+    i.value = '';
+
+    const { error } = await sb.from('messages').insert([{ sender: user.username, content, receiver, is_private }]);
+    
+    if(!error) {
+        loadMsgs(); // Realtime update
+    }
+        }
+        
         async function loadAll() {
             const { data } = await sb.from('profiles').select('*');
             profiles = data || [];
