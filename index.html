@@ -9,20 +9,21 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
         :root { --accent: #3b82f6; --glass: rgba(255, 255, 255, 0.03); }
-        body { background: #06080c; color: #e2e8f0; font-family: 'Outfit', sans-serif; height: 100vh; width: 100vw; overflow: hidden; margin: 0; display: flex; }
+        body { background: #06080c; color: #e2e8f0; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; margin: 0; }
         .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
         
-        /* Fixed Scroll Area */
-        #msg-container { flex: 1; overflow-y: auto; padding-bottom: 20px; scroll-behavior: smooth; }
+        /* Layout Fix: Prevents buttons from falling off screen */
+        .app-container { display: grid; grid-template-columns: 80px 1fr; height: 100vh; width: 100vw; }
+        #msg-container { height: calc(100vh - 140px); overflow-y: auto; scroll-behavior: smooth; }
         
         .modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); align-items: center; justify-content: center; }
         .modal.active { display: flex; }
+        .del-trigger { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 800; border: 1px solid rgba(239, 68, 68, 0.2); cursor: pointer; }
         
-        /* Mobile Responsiveness */
         @media (max-width: 768px) {
-            body { flex-direction: column; }
-            #side-nav { width: 100%; height: 70px; flex-direction: row; order: 2; border-r: 0; border-top: 1px solid rgba(255,255,255,0.05); }
-            #chat-page { height: calc(100vh - 70px); order: 1; }
+            .app-container { grid-template-columns: 1fr; grid-template-rows: 1fr 70px; }
+            #side-nav { flex-direction: row; width: 100%; height: 70px; border-r: 0; border-top: 1px solid rgba(255,255,255,0.1); justify-content: space-around; padding: 0 20px; }
+            #msg-container { height: calc(100vh - 160px); }
         }
     </style>
 </head>
@@ -30,49 +31,45 @@
 
     <div id="login-page" class="fixed inset-0 z-[10000] flex items-center justify-center bg-[#06080c]">
         <div class="glass p-10 rounded-[45px] w-full max-w-sm text-center">
-            <h1 class="text-5xl font-black mb-8 italic tracking-tighter text-white">ZY<span class="text-blue-500">ZENITH</span></h1>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl glass outline-none text-white border border-white/10">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl glass outline-none text-white border border-white/10">
-            <button id="login-btn" onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold hover:bg-blue-500 transition-all">INITIALIZE</button>
-            <p id="feouzy-copyright" onclick="handleCopyrightClick()" class="mt-8 text-[10px] text-gray-600 cursor-pointer uppercase tracking-widest font-bold">© 2026 FEOUZY_ENGINEERING [V16.2]</p>
+            <h1 class="text-5xl font-black mb-8 italic tracking-tighter">ZY<span class="text-blue-500">ZENITH</span></h1>
+            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl glass outline-none text-white">
+            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl glass outline-none text-white">
+            <button id="login-btn" onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold">INITIALIZE</button>
+            <p id="feouzy-copyright" onclick="handleCopyrightClick()" class="mt-8 text-[10px] text-gray-600 cursor-pointer uppercase font-bold tracking-widest">© 2026 FEOUZY_ENGINEERING [V16.2]</p>
         </div>
     </div>
 
     <div id="sector-overlay" class="modal">
-        <div class="glass p-10 rounded-[40px] border border-blue-500/30 text-center max-w-sm">
-            <h2 class="text-blue-500 font-black text-2xl tracking-[10px] mb-4">SECTOR_INFO</h2>
-            <div class="space-y-2 text-sm text-gray-400 mb-6">
-                <p>BUILD: <span class="text-white">ZYCHAT ZENITH ELITE</span></p>
-                <p>ENGINE: <span class="text-white">FEOUZY CORE V16</span></p>
-                <p>STATUS: <span class="text-green-500">VERIFIED_GENUINE</span></p>
-            </div>
-            <button onclick="toggleModal('sector-overlay')" class="border border-blue-500 text-blue-500 px-8 py-2 rounded-full text-xs font-black">RETURN</button>
+        <div class="glass p-10 rounded-[40px] border border-blue-500/30 text-center">
+            <h2 class="text-blue-500 font-black text-2xl tracking-[10px] mb-4 uppercase">Sector_Info</h2>
+            <p class="text-sm text-gray-400 mb-6">Build: ZyChat Zenith Elite<br>Provider: Feouzy Engineering</p>
+            <button onclick="toggleModal('sector-overlay')" class="border border-blue-500 text-blue-500 px-8 py-2 rounded-full text-xs font-black">CLOSE</button>
         </div>
     </div>
 
-    <nav id="side-nav" class="hidden w-24 flex flex-col items-center py-10 glass border-r border-white/5">
-        <div class="mb-10 text-blue-500 font-black text-xl italic">ZZ</div>
-        <button onclick="startVideoCall()" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl border border-blue-500/30">📹</button>
-        <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase">Logout</button>
-    </nav>
+    <div class="app-container">
+        <nav id="side-nav" class="flex flex-col items-center py-10 glass border-r border-white/5">
+            <div class="mb-10 text-blue-500 font-black text-xl italic">ZZ</div>
+            <button onclick="startVideoCall()" class="w-12 h-12 flex items-center justify-center text-xl mb-6 glass rounded-2xl border border-blue-500/30">📹</button>
+            <button onclick="handleLogout()" class="mt-auto text-[10px] font-black text-red-500/50 uppercase">Logout</button>
+        </nav>
 
-    <main id="chat-page" class="hidden flex-1 flex flex-col relative h-full">
-        <header class="h-16 flex items-center px-8 glass border-b border-white/5 justify-between">
-            <span class="text-[10px] font-black tracking-[0.4em] text-blue-500">SECTOR_ELITE_V16.2</span>
-            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">SECURE_LINK</span></div>
-        </header>
+        <main id="chat-page" class="flex flex-col relative h-full">
+            <header class="h-16 flex items-center px-8 glass border-b border-white/5 justify-between">
+                <span class="text-[10px] font-black tracking-[0.4em] text-blue-500 uppercase">Sector_Elite_V16.2</span>
+                <div class="flex items-center gap-2"><div id="online-glow" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[10px] font-bold text-gray-400">ENCRYPTED</span></div>
+            </header>
 
-        <div id="msg-container">
-            <div id="msg-box" class="p-6 space-y-4"></div>
-        </div>
+            <div id="msg-container"><div id="msg-box" class="p-6 space-y-6"></div></div>
 
-        <div class="p-4 bg-[#06080c]/80 backdrop-blur-md">
-            <div class="glass rounded-[30px] flex items-center px-6 py-1 border border-white/10 shadow-2xl">
-                <input id="msg-input" type="text" placeholder="Enter Transmission..." class="flex-1 bg-transparent py-4 text-sm outline-none text-white">
-                <button onclick="sendMsg()" class="text-blue-500 font-black text-xs px-4">SEND</button>
+            <div class="p-4 bg-[#06080c]/80 backdrop-blur-md">
+                <div class="glass rounded-[30px] flex items-center px-6 py-1 border border-white/10 shadow-2xl">
+                    <input id="msg-input" type="text" placeholder="Transmission..." class="flex-1 bg-transparent py-4 text-sm outline-none text-white">
+                    <button onclick="sendMsg()" class="text-blue-500 font-black text-xs px-4 tracking-widest">SEND</button>
+                </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script>
         const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
@@ -81,53 +78,36 @@
         let user = null;
         let clickCount = 0;
 
-        // SECURITY: KILL SWITCH
+        // KILL SWITCH
         async function verifySectorStatus() {
             try {
                 const { data } = await supabaseClient.from('app_settings').select('is_active').single();
                 if (data && data.is_active === false) {
-                    document.body.innerHTML = `<div style="background:#000;color:#3b82f6;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;text-align:center;">
-                        <h1 style="font-size:3rem;margin:0;">ZENITH_CORE</h1>
-                        <p style="color:#f87171;letter-spacing:5px;">[SECTOR_LOCKED]</p>
-                        <p style="color:#444;margin-top:20px;">License suspended by Feouzy Engineering.</p>
-                    </div>`;
+                    document.body.innerHTML = `<div style="background:#000;color:#3b82f6;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;text-align:center;"><h1 style="font-size:3rem;">ZENITH_LOCKED</h1><p>License Expired.</p></div>`;
                     window.stop();
                 }
-            } catch (e) { console.log("Shields Up"); }
+            } catch (e) {}
         }
 
-        // BRANDING TRIGGER
-        function handleCopyrightClick() {
-            clickCount++;
-            if (clickCount >= 5) {
-                alert("ADMIN_OVERRIDE: Accessing Backend...");
-                clickCount = 0;
-            } else { toggleModal('sector-overlay'); }
-        }
-
-        // AUTH LOGIC
+        // AUTH & SESSION
         async function handleLogin() {
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
-            if (!n || !p) return;
             const { data, error } = await supabaseClient.from('profiles').select('*').ilike('username', n).eq('password', p).single();
-            if (error || !data) return alert("Access Denied");
-            
-            user = { name: data.username, role: data.username === 'admin' ? 'admin' : 'user' };
-            localStorage.setItem('zy_session', JSON.stringify(user)); // Save Session
+            if (error || !data) return alert("Denied");
+            user = { name: data.username, role: data.username === 'admin' ? 'admin' : 'user', color: data.color || 'text-white' };
+            localStorage.setItem('zy_session', JSON.stringify(user));
             enterApp();
         }
 
         function enterApp() {
             document.getElementById('login-page').style.display = 'none';
-            document.getElementById('chat-page').classList.remove('hidden');
-            document.getElementById('side-nav').classList.remove('hidden');
             loadMsgs();
-            supabaseClient.channel('msgs').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
+            supabaseClient.channel('realtime_msg').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
             verifySectorStatus();
         }
 
-        // MESSAGING
+        // MESSAGING (RESTORED COLOR, DELETE, PRIVATE)
         async function loadMsgs() {
             const { data } = await supabaseClient.from('messages').select('*').eq('is_visible', true).order('created_at', { ascending: true });
             if (data) renderMessages(data);
@@ -135,40 +115,44 @@
 
         function renderMessages(data) {
             const box = document.getElementById('msg-box');
-            box.innerHTML = data.map(m => `
-                <div class="p-4 rounded-[20px] glass border border-white/5 animate-fade-in">
-                    <p class="text-[9px] font-black text-blue-500 mb-1 uppercase tracking-tighter">${m.sender}</p>
-                    <p class="text-sm text-gray-200 font-light">${m.content}</p>
-                </div>
-            `).join('');
-            const container = document.getElementById('msg-container');
-            container.scrollTop = container.scrollHeight;
+            box.innerHTML = data.map(m => {
+                const isMine = m.sender === user.name;
+                const isAdmin = user.role === 'admin';
+                // Private message check
+                if (m.is_private && !isMine && m.receiver !== user.name && !isAdmin) return '';
+                
+                return `<div class="p-5 rounded-[25px] glass border border-white/5">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-black uppercase ${isMine ? 'text-blue-400' : 'text-white'}">${m.sender}</span>
+                        ${(isMine || isAdmin) ? `<button onclick="deleteMsg('${m.id}')" class="del-trigger">DEL</button>` : ''}
+                    </div>
+                    <p class="text-[15px] text-gray-200">${m.content}</p>
+                </div>`;
+            }).join('');
+            box.parentElement.scrollTop = box.parentElement.scrollHeight;
         }
 
         async function sendMsg() {
             const i = document.getElementById('msg-input');
-            if (!i.value.trim()) return;
-            await supabaseClient.from('messages').insert([{ sender: user.name, content: i.value, is_visible: true }]);
+            const v = i.value.trim(); if (!v) return;
+            let r = 'all', p = false, content = v;
+            if (v.startsWith('@')) { const pts = v.split(' '); r = pts[0].substring(1); content = pts.slice(1).join(' '); p = true; }
+            await supabaseClient.from('messages').insert([{ sender: user.name, content: content, receiver: r, is_private: p, is_visible: true }]);
             i.value = '';
         }
 
-        // UTILS
+        async function deleteMsg(id) { await supabaseClient.from('messages').update({ is_visible: false }).eq('id', id); }
+        function handleCopyrightClick() { clickCount++; if (clickCount >= 5) { alert("ADMIN_MODE"); clickCount = 0; } else { toggleModal('sector-overlay'); } }
         function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
         function handleLogout() { localStorage.removeItem('zy_session'); location.reload(); }
         function startVideoCall() { window.open(`https://meet.jit.si/ZyZenith_${Math.random().toString(36).substring(7)}`, '_blank'); }
 
-        // AUTO-LOGIN CHECK
         window.onload = () => {
-            const savedSession = localStorage.getItem('zy_session');
-            if (savedSession) {
-                user = JSON.parse(savedSession);
-                enterApp();
-            }
+            const session = localStorage.getItem('zy_session');
+            if (session) { user = JSON.parse(session); enterApp(); }
             verifySectorStatus();
         };
-
-        // Enter Key Listener
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
     </script>
 </body>
-</html>
+                </html>
