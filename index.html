@@ -8,147 +8,229 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+        
+        :root { --accent: #3b82f6; --glass: rgba(255, 255, 255, 0.03); }
         body { background: #06080c; color: #e2e8f0; font-family: 'Outfit', sans-serif; height: 100vh; width: 100vw; overflow: hidden; margin: 0; display: flex; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        #msg-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { padding: 12px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
-        .system-msg { background: rgba(59, 130, 246, 0.1); border: 1px dashed #3b82f6; text-align: center; font-size: 10px; color: #3b82f6; font-weight: 800; }
-        .private-msg { border-color: #ec4899; background: rgba(236, 72, 153, 0.05); }
-        #directory { width: 300px; height: 100vh; display: none; border-left: 1px solid rgba(255,255,255,0.05); flex-direction: column; }
-        #directory.active { display: flex; }
+        .glass { background: var(--glass); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        /* Desktop Layout (Triple Pane) */
+        #side-nav { width: 80px; height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 30px 0; border-right: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+        #chat-main { flex: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+        #directory { width: 320px; height: 100vh; border-left: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; flex-shrink: 0; }
+
+        /* Message Area */
+        #msg-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .bubble { padding: 14px 20px; border-radius: 22px; max-width: 85%; border: 1px solid rgba(255,255,255,0.05); animation: slide 0.2s ease; }
+        .server-msg { align-self: center; background: rgba(59, 130, 246, 0.1); border: 1px dashed #3b82f6; color: #3b82f6; font-size: 11px; font-weight: 800; width: 90%; text-align: center; border-radius: 12px; }
+        
+        @keyframes slide { from { opacity: 0; transform: translateY(5px); } }
+
+        /* Mobile Specific (Responsive Breakpoints) */
+        @media (max-width: 1024px) {
+            #directory { display: none; position: fixed; right: 0; top: 0; z-index: 100; background: #06080c; }
+            #directory.active { display: flex; }
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #side-nav { width: 100%; height: 70px; flex-direction: row; order: 2; border-right: 0; border-top: 1px solid rgba(255,255,255,0.05); padding: 0 20px; justify-content: space-around; }
+            #chat-main { height: calc(100vh - 70px); order: 1; }
+            .bubble { max-width: 90%; }
+        }
     </style>
 </head>
 <body>
 
     <div id="login-page" class="fixed inset-0 z-[10000] flex items-center justify-center bg-[#06080c]">
-        <div class="glass p-10 rounded-[40px] w-full max-w-sm text-center">
-            <h1 class="text-5xl font-black mb-8 italic">ZY<span class="text-blue-500">ZENITH</span></h1>
-            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-xl glass outline-none text-white border border-white/10">
-            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-xl glass outline-none text-white border border-white/10">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-xl font-bold">INITIALIZE</button>
+        <div class="glass p-10 rounded-[45px] w-full max-w-sm text-center shadow-2xl">
+            <h1 class="text-5xl font-black mb-8 italic tracking-tighter">ZY<span class="text-blue-500">ZENITH</span></h1>
+            <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl glass outline-none border border-white/10 focus:border-blue-500/40 transition-all">
+            <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl glass outline-none border border-white/10 focus:border-blue-500/40 transition-all">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-black hover:bg-blue-500 transition-all">INITIALIZE</button>
+            <p class="mt-8 text-[9px] text-gray-700 uppercase font-black tracking-widest">© 2026 FEOUZY_ENGINEERING</p>
         </div>
     </div>
 
-    <nav id="side-nav" class="hidden w-20 flex flex-col items-center py-10 glass">
-        <div class="mb-10 text-blue-500 font-black text-xl italic">ZZ</div>
-        <button onclick="toggleDir()" class="w-12 h-12 glass rounded-xl mb-4 flex items-center justify-center">👥</button>
-        <button onclick="startVideo()" class="w-12 h-12 glass rounded-xl mb-4 flex items-center justify-center">📹</button>
-        <button onclick="logout()" class="mt-auto text-red-500 font-bold text-[10px]">EXIT</button>
+    <nav id="side-nav" class="hidden glass">
+        <div class="hidden md:block mb-10 text-blue-500 font-black text-2xl italic">ZZ</div>
+        <button onclick="toggleDir()" class="w-12 h-12 glass rounded-2xl flex items-center justify-center text-xl hover:border-blue-500/40">👥</button>
+        <button onclick="startVdo()" class="w-12 h-12 glass rounded-2xl flex items-center justify-center text-xl hover:border-blue-500/40">📹</button>
+        <button onclick="logout()" class="md:mt-auto text-red-500 font-black text-[10px] tracking-tighter">LOGOUT</button>
     </nav>
 
-    <main class="flex-1 flex flex-col">
-        <header class="h-16 flex items-center px-8 border-b border-white/5 justify-between">
-            <span id="welcome" class="text-[10px] font-black tracking-widest text-blue-500">OFFLINE</span>
+    <main id="chat-main" class="hidden">
+        <header class="h-16 flex items-center px-6 border-b border-white/5 justify-between">
+            <div class="flex flex-col">
+                <span id="welcome" class="text-[10px] font-black tracking-widest text-blue-500 uppercase">Sector_Elite</span>
+                <span id="typing-text" class="text-[9px] text-gray-500 italic font-bold h-3"></span>
+            </div>
+            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[9px] font-bold text-gray-600 tracking-widest">SECURE</span></div>
         </header>
+
         <div id="msg-container"></div>
-        <div class="p-4"><input id="msg-input" type="text" placeholder="Enter Transmission..." class="w-full glass rounded-full px-6 py-4 outline-none text-sm"></div>
+
+        <div class="p-4 bg-[#06080c]/50 backdrop-blur-md">
+            <div class="glass rounded-full flex items-center px-6 py-1 border border-white/10">
+                <input id="msg-input" type="text" oninput="handleTyping()" placeholder="Enter transmission..." class="flex-1 bg-transparent py-4 text-sm outline-none">
+                <button onclick="send()" class="text-blue-500 font-black text-xs px-4">SEND</button>
+            </div>
+        </div>
     </main>
 
-    <aside id="directory" class="glass">
-        <div class="p-6 border-b border-white/5 font-black text-xs text-blue-500 uppercase">Sector_Directory</div>
-        <div id="user-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+    <aside id="directory" class="hidden lg:flex glass">
+        <div class="p-6 border-b border-white/5 font-black text-[10px] tracking-[0.3em] text-blue-500 uppercase">Member_Directory</div>
+        <div id="user-list" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
     </aside>
 
     <script>
-        const SB_URL = 'YOUR_URL';
-        const SB_KEY = 'YOUR_KEY';
+        const SB_URL = 'https://bpsutdwybsatmxuyjzfe.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwc3V0ZHd5YnNhdG14dXlqemZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzIzMDUsImV4cCI6MjA4MjkwODMwNX0.5i4gAiUVqZ9939-wM43iEDxG4cHQatiju3cL8bxtAMM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let user = null, online = {};
+        let user = null, online = {}, profiles = [], typeTimeout, inactivityTimer;
 
+        // --- SECURITY: REMOTE KILL SWITCH ---
+        async function verifyKillSwitch() {
+            const { data, error } = await sb.from('app_settings').select('is_active').eq('id', 1).single();
+            if (error || (data && data.is_active === false)) {
+                document.body.innerHTML = `<div style="background:#000; color:#ff0000; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:monospace; text-align:center;"><h1 style="font-size:3rem; letter-spacing:10px;">SECTOR_LOCKED</h1><p style="color:#444;">Access Denied by Feouzy Engineering. System Integrity Compromised.</p></div>`;
+                localStorage.clear();
+                window.stop();
+            }
+        }
+
+        // --- SECURITY: AUTO-DESTRUCT ---
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                if(user) { alert("SESSION_EXPIRED: Security timeout."); logout(); }
+            }, 900000); // 15 Minutes
+        }
+        window.onmousemove = resetInactivityTimer;
+        window.onkeydown = resetInactivityTimer;
+
+        // AUTH
         async function handleLogin() {
-            const n = document.getElementById('u-name').value, p = document.getElementById('u-pass').value;
+            const n = document.getElementById('u-name').value.trim();
+            const p = document.getElementById('u-pass').value.trim();
             const { data } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p).single();
             if (data?.is_banned) return alert("BANNED");
             if (data) { user = data; localStorage.setItem('zy_session', JSON.stringify(data)); startApp(); }
         }
 
         function startApp() {
+            verifyKillSwitch();
             document.getElementById('login-page').style.display = 'none';
-            document.getElementById('side-nav').classList.remove('hidden');
-            document.getElementById('welcome').innerText = `SECTOR_ELITE // ${user.username}`;
+            document.querySelectorAll('#side-nav, #chat-main, #directory').forEach(el => el.classList.remove('hidden'));
+            document.getElementById('welcome').innerText = `USER: ${user.username}`;
             initPresence();
-            loadMsgs();
-            sb.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs).subscribe();
-            sb.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, loadDirectory).subscribe();
-            loadDirectory();
+            loadAll();
+            sb.channel('db').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingUI)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, verifyKillSwitch)
+              .subscribe();
         }
 
         function initPresence() {
-            const ch = sb.channel('presence').on('presence', { event: 'sync' }, () => { online = ch.presenceState(); renderDir(); }).subscribe(async (s) => {
-                if (s === 'SUBSCRIBED') await ch.track({ id: user.id, name: user.username });
+            const ch = sb.channel('presence').on('presence', { event: 'sync' }, () => { 
+                online = ch.presenceState(); renderDir(); 
+            }).subscribe(async (s) => {
+                if (s === 'SUBSCRIBED') await ch.track({ id: user.id, username: user.username });
             });
         }
 
+        // MESSAGING (WITH GOD-EYE SECURITY)
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').eq('is_visible', true).order('created_at', { ascending: true });
             const box = document.getElementById('msg-container');
             box.innerHTML = data.map(m => {
-                const isMine = m.sender === user.username, isAdmin = user.role === 'admin';
-                if (m.is_private && !isMine && m.receiver !== user.username && !isAdmin) return '';
+                const isMine = m.sender === user.username;
+                const isForMe = m.receiver === user.username;
+                const isAdmin = user.username === 'admin';
+                
+                // Security check for private transmissions
+                if (m.is_private && !isMine && !isForMe && !isAdmin) return '';
+                
                 const time = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
-                if (m.is_system) return `<div class="bubble system-msg">${m.content} [${time}]</div>`;
-                
+                const senderProfile = profiles.find(p => p.username === m.sender);
+
+                if (m.is_server) return `<div class="bubble server-msg p-2 my-2">${m.content} // ${time}</div>`;
+
                 return `
-                <div class="bubble glass ${isMine ? 'self-end' : 'self-start'} ${m.is_private ? 'private-msg' : ''}">
-                    <div class="flex justify-between gap-4 mb-1">
-                        <span class="text-[9px] font-black" style="color:${isMine ? '#3b82f6' : '#fff'}">${m.sender} ${m.is_private ? '🔒' : ''}</span>
+                <div class="bubble glass ${isMine ? 'self-end border-blue-500/20 bg-blue-500/5' : 'self-start'}">
+                    <div class="flex justify-between items-center gap-6 mb-1">
+                        <span class="text-[9px] font-black uppercase tracking-tighter ${senderProfile?.color || 'text-white'}">${m.sender} ${m.is_private ? '🔒' : ''}</span>
                         <div class="flex gap-2 items-center">
-                            <span class="text-[8px] text-gray-600">${time}</span>
-                            <button onclick="delMsg('${m.id}')" class="text-[8px] text-red-500 font-bold">DEL</button>
+                            <span class="text-[8px] text-gray-600 font-bold">${time}</span>
+                            <button onclick="del('${m.id}')" class="text-[8px] text-red-500/40 font-black hover:text-red-500 transition-colors">DEL</button>
                         </div>
                     </div>
-                    <p class="text-sm">${m.content}</p>
+                    <p class="text-[15px] font-light text-gray-200 leading-relaxed">${m.content}</p>
                 </div>`;
             }).join('');
             box.scrollTop = box.scrollHeight;
         }
 
         async function send() {
-            const i = document.getElementById('msg-input'), v = i.value.trim(); if (!v) return;
-            let r = 'all', p = false, content = v;
-            if (v.startsWith('@')) { const pts = v.split(' '); r = pts[0].substring(1); content = pts.slice(1).join(' '); p = true; }
-            await sb.from('messages').insert([{ sender: user.username, content, receiver: r, is_private: p }]);
+            const i = document.getElementById('msg-input'), v = i.value.trim(); if(!v) return;
+            let receiver = 'all', is_private = false, type = 'group', content = v;
+            if (v.startsWith('@')) { const pts = v.split(' '); receiver = pts[0].substring(1); content = pts.slice(1).join(' '); is_private = true; type = 'private'; }
+            await sb.from('messages').insert([{ sender: user.username, content, receiver, is_private, type }]);
             i.value = '';
+            setTyping(false);
         }
 
-        async function startVideo() {
-            const room = `Zenith_Sector_${Math.random().toString(36).substring(7)}`;
-            await sb.from('messages').insert([{ sender: 'SYSTEM', content: `🚨 ${user.username} INITIATED A VIDEO CALL`, is_system: true }]);
-            window.open(`https://meet.jit.si/${room}`, '_blank');
+        // TYPING STATUS
+        async function setTyping(status) {
+            await sb.from('typing_status').upsert({ username: user.username, is_typing: status, last_updated: new Date() }, { onConflict: 'username' });
+        }
+        function handleTyping() {
+            setTyping(true);
+            clearTimeout(typeTimeout);
+            typeTimeout = setTimeout(() => setTyping(false), 2000);
+        }
+        async function updateTypingUI() {
+            const { data } = await sb.from('typing_status').select('username').eq('is_typing', true).neq('username', user.username);
+            const text = data.length > 0 ? `${data[0].username} is typing...` : '';
+            document.getElementById('typing-text').innerText = text;
         }
 
-        async function loadDirectory() {
+        // DIRECTORY & ADMIN
+        async function loadAll() {
             const { data } = await sb.from('profiles').select('*');
-            window.profiles = data;
+            profiles = data || [];
             renderDir();
+            loadMsgs();
         }
-
         function renderDir() {
             const list = document.getElementById('user-list');
-            if (!window.profiles) return;
-            list.innerHTML = window.profiles.map(p => {
-                const isOnline = Object.values(online).flat().some(u => u.id === p.id);
+            list.innerHTML = profiles.map(p => {
+                const isOnline = Object.values(online).flat().some(u => u.username === p.username);
                 return `
-                <div class="p-4 rounded-2xl glass border border-white/5">
+                <div class="p-4 rounded-2xl glass border border-white/5 hover:border-blue-500/20 transition-all">
                     <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_8px_green]' : 'bg-gray-700'}"></div>
-                        <span class="text-sm font-bold" style="color:${p.color}">${p.username}</span>
-                        ${user.role === 'admin' ? `<button onclick="ban('${p.username}')" class="ml-auto text-red-500 text-[9px]">BAN</button>` : ''}
+                        <div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-gray-700'}"></div>
+                        <span class="text-sm font-bold ${p.color}">${p.username}</span>
+                        ${user.username === 'admin' ? `<button onclick="ban('${p.username}')" class="ml-auto text-red-500 text-[9px] font-black">BAN</button>` : ''}
                     </div>
-                    <p class="text-[10px] text-gray-500 mt-1">${p.bio}</p>
+                    <p class="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-tighter">${p.status_text || 'ACTIVE'}</p>
                 </div>`;
             }).join('');
         }
 
-        async function delMsg(id) { await sb.from('messages').update({ is_visible: false }).eq('id', id); }
+        async function startVdo() {
+            await sb.from('messages').insert([{ sender: 'SYSTEM', content: `🚨 ${user.username} INITIATED VIDEO CALL`, is_server: true }]);
+            window.open('https://meet.jit.si/Zenith_' + user.id, '_blank');
+        }
+
+        async function del(id) { await sb.from('messages').update({ is_visible: false }).eq('id', id); }
         async function ban(u) { if(confirm("Ban " + u + "?")) await sb.from('profiles').update({ is_banned: true }).eq('username', u); }
-        function toggleDir() { document.getElementById('directory').classList.toggle('active'); }
+        function toggleDir() { document.getElementById('directory').classList.toggle('active'); document.getElementById('directory').classList.toggle('hidden'); }
         function logout() { localStorage.clear(); location.reload(); }
 
         window.onload = () => {
+            verifyKillSwitch();
             const s = localStorage.getItem('zy_session');
-            if (s) { user = JSON.parse(s); startApp(); }
+            if(s) { user = JSON.parse(s); startApp(); }
         };
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter') send(); };
     </script>
