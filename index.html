@@ -193,6 +193,9 @@ setTimeout(() => {
         }
 
         async function send() {
+           // Paste this AT THE START of the send function so it feels instant
+const box = document.getElementById('msg-container');
+box.scrollTo({top: box.scrollHeight + 500, behavior: 'smooth'});
             const i = document.getElementById('msg-input'), v = i.value.trim(); if(!v) return;
             let receiver = 'all', is_private = false, content = v;
             if (v.startsWith('@')) { const pts = v.split(' '); receiver = pts[0].substring(1); content = pts.slice(1).join(' '); is_private = true; }
