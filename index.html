@@ -12,23 +12,28 @@
         body { background: #06080c; color: #e2e8f0; font-family: 'Outfit', sans-serif; height: 100vh; width: 100vw; overflow: hidden; margin: 0; display: flex; }
         .glass { background: var(--glass); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); }
         
-        #side-nav { width: 80px; height: 100vh; display: none; flex-direction: column; align-items: center; padding: 30px 0; border-right: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+        /* Desktop Sidebar */
+        #side-nav { width: 80px; height: 100vh; display: none; flex-direction: column; align-items: center; padding: 30px 0; border-right: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; z-index: 50; }
         #chat-main { flex: 1; display: none; flex-direction: column; height: 100vh; min-width: 0; position: relative; }
-        #directory { width: 320px; height: 100vh; border-left: 1px solid rgba(255,255,255,0.05); display: none; flex-direction: column; flex-shrink: 0; }
+        #directory { width: 320px; height: 100vh; border-left: 1px solid rgba(255,255,255,0.05); display: none; flex-direction: column; flex-shrink: 0; z-index: 60; }
         #directory.active { display: flex !important; }
 
-        #msg-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .bubble { padding: 14px 20px; border-radius: 22px; max-width: 85%; border: 1px solid rgba(255,255,255,0.05); }
+        #msg-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 100px; }
+        .bubble { padding: 14px 20px; border-radius: 22px; max-width: 85%; border: 1px solid rgba(255,255,255,0.05); word-wrap: break-word; }
         .server-msg { align-self: center; background: rgba(59, 130, 246, 0.1); border: 1px dashed #3b82f6; color: #3b82f6; font-size: 11px; font-weight: 800; width: 90%; text-align: center; border-radius: 12px; }
 
         @media (max-width: 768px) {
-            body { flex-direction: column; }
-            #side-nav { width: 100%; height: 60px; flex-direction: row; order: 3; border-right: 0; border-top: 1px solid rgba(255,255,255,0.05); justify-content: space-around; padding: 0; }
-            #side-nav.logged-in { display: flex !important; }
-            #chat-main { height: calc(100vh - 60px); order: 1; }
-            #directory { position: fixed; right: 0; top: 0; z-index: 100; background: #06080c; width: 85%; }
-            #side-nav button { margin-bottom: 0 !important; }
+            #side-nav { 
+                position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; 
+                flex-direction: row; justify-content: space-around; padding: 0; 
+                border-right: 0; border-top: 1px solid rgba(255,255,255,0.1);
+                background: rgba(6, 8, 12, 0.95); backdrop-filter: blur(10px);
+            }
+            #side-nav button { margin-bottom: 0 !important; width: 50px; height: 50px; }
             #side-nav div { display: none !important; }
+            #chat-main { height: 100vh; padding-bottom: 65px; }
+            #directory { position: fixed; right: 0; top: 0; width: 100%; height: 100%; background: #06080c; }
+            #input-area { bottom: 65px !important; }
         }
         .logged-in { display: flex !important; }
     </style>
@@ -40,7 +45,7 @@
             <h1 class="text-5xl font-black mb-8 italic">ZY<span class="text-blue-500">ZENITH</span></h1>
             <input id="u-name" type="text" placeholder="Username" class="w-full p-4 mb-4 rounded-2xl glass outline-none border border-white/10 text-white">
             <input id="u-pass" type="password" placeholder="Password" class="w-full p-4 mb-8 rounded-2xl glass outline-none border border-white/10 text-white">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-black">INITIALIZE</button>
+            <button onclick="handleLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-black shadow-lg shadow-blue-500/20">INITIALIZE</button>
             <p onclick="alert('Engineered by Feouzy')" class="mt-8 text-[9px] text-gray-700 font-black cursor-pointer uppercase tracking-widest">© 2026 FEOUZY_ENGINEERING</p>
         </div>
     </div>
@@ -53,33 +58,38 @@
     </nav>
 
     <main id="chat-main">
-        <header class="h-16 flex items-center px-6 border-b border-white/5 justify-between">
+        <header class="h-16 flex items-center px-6 border-b border-white/5 justify-between glass sticky top-0 z-40">
             <div>
-                <span id="welcome" class="text-[10px] font-black text-blue-500 uppercase">Sector_Elite</span>
-                <div id="typing-text" class="text-[9px] text-gray-500 italic"></div>
+                <span id="welcome" class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Sector_Elite</span>
+                <div id="typing-text" class="text-[9px] text-gray-500 italic h-3"></div>
             </div>
-            <span class="text-[9px] font-bold text-gray-600 tracking-widest">SECURE_ACTIVE</span>
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                <span class="text-[9px] font-bold text-gray-600 tracking-widest">SECURE_ACTIVE</span>
+            </div>
         </header>
+
         <div id="msg-container"></div>
-        <div class="p-4 bg-[#06080c]">
-            <div class="glass rounded-full flex items-center px-6 py-1">
+
+        <div id="input-area" class="fixed bottom-0 md:relative w-full p-4 bg-[#06080c]/80 backdrop-blur-lg">
+            <div class="glass rounded-full flex items-center px-6 py-1 border border-white/10">
                 <input id="msg-input" type="text" oninput="handleTyping()" placeholder="Enter transmission..." class="flex-1 bg-transparent py-4 text-sm outline-none">
-                <button onclick="send()" class="text-blue-500 font-black text-xs px-4">SEND</button>
+                <button onclick="send()" class="text-blue-500 font-black text-xs px-4 hover:scale-110 transition-transform">SEND</button>
             </div>
         </div>
     </main>
 
     <aside id="directory" class="glass">
         <div class="p-6 border-b border-white/5 font-black text-[10px] text-blue-500 uppercase flex justify-between">
-            <span>Members</span>
-            <button onclick="toggleDir()" class="md:hidden text-gray-500">✕</button>
+            <span>Sector_Directory</span>
+            <button onclick="toggleDir()" class="md:hidden text-red-500">✕ CLOSE</button>
         </div>
         <div id="user-list" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-        <div class="p-4 border-t border-white/5 bg-white/5">
-            <p class="text-[9px] font-black text-gray-500 mb-2 uppercase">Update Bio Status</p>
+        <div class="p-6 border-t border-white/5 bg-white/5">
+            <p class="text-[9px] font-black text-gray-500 mb-2 uppercase tracking-tighter">Update Bio Status</p>
             <div class="flex gap-2">
-                <input id="new-bio" type="text" placeholder="Status..." class="bg-black/50 border border-white/10 rounded-lg p-2 text-xs flex-1 outline-none">
-                <button onclick="updateBio()" class="bg-blue-600 text-[10px] px-3 rounded-lg font-bold">SET</button>
+                <input id="new-bio" type="text" placeholder="Status..." class="bg-black/50 border border-white/10 rounded-xl p-3 text-xs flex-1 outline-none text-white">
+                <button onclick="updateBio()" class="bg-blue-600 text-[10px] px-4 rounded-xl font-bold">SET</button>
             </div>
         </div>
     </aside>
@@ -90,11 +100,10 @@
         const sb = supabase.createClient(SB_URL, SB_KEY);
         let user = null, online = {}, profiles = [], typeTimeout;
 
-        // KILL SWITCH PROTOCOL
         async function verifyKillSwitch() {
             const { data } = await sb.from('app_settings').select('is_active').eq('id', 1).single();
             if (data && data.is_active === false) {
-                document.body.innerHTML = `<div style="background:#000; color:#ff0000; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:monospace;"><h1 style="letter-spacing:10px;">SECTOR_LOCKED</h1><p>System deactivated by Admin.</p></div>`;
+                document.body.innerHTML = `<div style="background:#000; color:#ff0000; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:monospace; text-align:center; padding:20px;"><h1 style="letter-spacing:5px; font-size:2rem;">SYSTEM_TERMINATED</h1><p style="color:#444; margin-top:10px;">Feouzy Engineering Protocol: Sector Locked.</p></div>`;
                 localStorage.clear();
             }
         }
@@ -103,9 +112,9 @@
             const n = document.getElementById('u-name').value.trim();
             const p = document.getElementById('u-pass').value.trim();
             const { data } = await sb.from('profiles').select('*').ilike('username', n).eq('password', p).single();
-            if (data?.is_banned) return alert("BANNED");
+            if (data?.is_banned) return alert("ACCESS_DENIED: Account Banned");
             if (data) { user = data; localStorage.setItem('zy_session', JSON.stringify(data)); startApp(); }
-            else { alert("INVALID_CREDENTIALS"); }
+            else { alert("INVALID_TRANSMISSION: Credentials Fail"); }
         }
 
         async function startApp() {
@@ -119,10 +128,12 @@
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('side-nav').classList.add('logged-in');
             document.getElementById('chat-main').classList.add('logged-in');
-            document.getElementById('welcome').innerText = `USER: ${user.username}`;
+            document.getElementById('welcome').innerText = `SECTOR_USER: ${user.username}`;
             
             initPresence();
             loadAll();
+
+            // Realtime Listeners
             sb.channel('db').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMsgs)
               .on('postgres_changes', { event: '*', schema: 'public', table: 'typing_status' }, updateTypingUI)
               .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_settings' }, verifyKillSwitch).subscribe();
@@ -137,6 +148,7 @@
         async function loadMsgs() {
             const { data } = await sb.from('messages').select('*').eq('is_visible', true).order('created_at', { ascending: true });
             const box = document.getElementById('msg-container');
+            if(!data) return;
             box.innerHTML = data.map(m => {
                 const isMine = m.sender === user.username;
                 const isAdmin = user.username === 'admin';
@@ -145,15 +157,15 @@
                 const senderProf = profiles.find(p => p.username === m.sender);
                 if (m.is_server) return `<div class="bubble server-msg p-2 my-2">${m.content}</div>`;
 
-                return `<div class="bubble glass ${isMine ? 'self-end bg-blue-500/5' : 'self-start'}">
+                return `<div class="bubble glass ${isMine ? 'self-end bg-blue-500/10 border-blue-500/20' : 'self-start'}">
                     <div class="flex justify-between items-center gap-6 mb-1">
-                        <span class="text-[9px] font-black uppercase ${senderProf?.color || 'text-white'}">${m.sender}</span>
+                        <span class="text-[9px] font-black uppercase tracking-tighter ${senderProf?.color || 'text-white'}">${m.sender}</span>
                         <div class="flex gap-2">
                             <span class="text-[8px] text-gray-600">${time}</span>
-                            ${(isMine || isAdmin) ? `<button onclick="del('${m.id}')" class="text-[8px] text-red-500 font-black">DEL</button>` : ''}
+                            ${(isMine || isAdmin) ? `<button onclick="del('${m.id}')" class="text-[8px] text-red-500/60 hover:text-red-500 font-black">DEL</button>` : ''}
                         </div>
                     </div>
-                    <p class="text-[14px] text-gray-200">${m.content}</p>
+                    <p class="text-[14px] text-gray-200 leading-tight">${m.content}</p>
                 </div>`;
             }).join('');
             box.scrollTop = box.scrollHeight;
@@ -163,15 +175,22 @@
             const bio = document.getElementById('new-bio').value.trim();
             if(!bio) return;
             const { error } = await sb.from('profiles').update({ status_text: bio }).eq('id', user.id);
-            if(!error) { document.getElementById('new-bio').value = ''; loadAll(); }
+            if(!error) { 
+                document.getElementById('new-bio').value = ''; 
+                loadAll(); // Instant Refresh Directory
+            }
         }
 
         async function send() {
             const i = document.getElementById('msg-input'), v = i.value.trim(); if(!v) return;
             let receiver = 'all', is_private = false, content = v;
             if (v.startsWith('@')) { const pts = v.split(' '); receiver = pts[0].substring(1); content = pts.slice(1).join(' '); is_private = true; }
-            await sb.from('messages').insert([{ sender: user.username, content, receiver, is_private }]);
-            i.value = '';
+            
+            const { error } = await sb.from('messages').insert([{ sender: user.username, content, receiver, is_private }]);
+            if(!error) {
+                i.value = '';
+                loadMsgs(); // Optimistic Load
+            }
         }
 
         async function loadAll() {
@@ -185,30 +204,36 @@
             const list = document.getElementById('user-list');
             list.innerHTML = profiles.map(p => {
                 const isOnline = Object.values(online).flat().some(u => u.username === p.username);
-                return `<div class="p-4 rounded-2xl glass border border-white/5 flex flex-col">
+                return `<div class="p-4 rounded-2xl glass border border-white/5 flex flex-col hover:border-blue-500/20 transition-all">
                     <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_8px_green]' : 'bg-gray-700'}"></div>
-                        <span class="text-sm font-bold ${p.color}">${p.username}</span>
-                        ${user.username === 'admin' ? `<button onclick="ban('${p.username}')" class="ml-auto text-red-500 text-[9px] font-black">BAN</button>` : ''}
+                        <div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-gray-700'}"></div>
+                        <span class="text-sm font-bold ${p.color || 'text-white'}">${p.username}</span>
+                        ${user.username === 'admin' ? `<button onclick="ban('${p.username}')" class="ml-auto text-red-500 text-[9px] font-black hover:scale-110 transition-transform">BAN</button>` : ''}
                     </div>
-                    <p class="text-[10px] text-gray-500 mt-1 uppercase">${p.status_text || 'Active'}</p>
+                    <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-bold">${p.status_text || 'Active_Sector'}</p>
                 </div>`;
             }).join('');
         }
 
         async function setTyping(s) { await sb.from('typing_status').upsert({ username: user.username, is_typing: s, last_updated: new Date() }, { onConflict: 'username' }); }
         function handleTyping() { setTyping(true); clearTimeout(typeTimeout); typeTimeout = setTimeout(() => setTyping(false), 2000); }
+        
         async function updateTypingUI() {
             const { data } = await sb.from('typing_status').select('username').eq('is_typing', true).neq('username', user.username);
-            document.getElementById('typing-text').innerText = data.length > 0 ? `${data[0].username} is typing...` : '';
+            document.getElementById('typing-text').innerText = data.length > 0 ? `${data[0].username} is encoding...` : '';
         }
 
         async function startVdo() {
-            await sb.from('messages').insert([{ sender: 'SYSTEM', content: `🚨 ${user.username} INITIATED VIDEO CALL`, is_server: true }]);
+            await sb.from('messages').insert([{ sender: 'SYSTEM', content: `🚨 ${user.username} INITIATED ENCRYPTED VIDEO`, is_server: true }]);
             window.open('https://meet.jit.si/Zenith_' + user.id, '_blank');
         }
-        async function del(id) { await sb.from('messages').update({ is_visible: false }).eq('id', id); }
-        async function ban(u) { if(confirm("Ban " + u + "?")) await sb.from('profiles').update({ is_banned: true }).eq('username', u); }
+
+        async function del(id) { 
+            const { error } = await sb.from('messages').update({ is_visible: false }).eq('id', id); 
+            if(!error) loadMsgs(); // Instant Refresh UI
+        }
+        
+        async function ban(u) { if(confirm("Terminate Access for " + u + "?")) await sb.from('profiles').update({ is_banned: true }).eq('username', u); }
         function toggleDir() { document.getElementById('directory').classList.toggle('active'); }
         function logout() { localStorage.clear(); location.reload(); }
 
