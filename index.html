@@ -202,8 +202,6 @@ setTimeout(() => {
         async function send() {
     const i = document.getElementById('msg-input'), v = i.value.trim(); 
     if(!v) return;
-
-    const box = document.getElementById('msg-container');
     
     // Step 1: UI Feedback - scroll down immediately
     box.scrollTo({top: box.scrollHeight + 500, behavior: 'smooth'});
