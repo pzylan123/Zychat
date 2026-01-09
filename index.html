@@ -202,6 +202,8 @@ setTimeout(() => {
                 i.value = '';
                 loadMsgs(); // Optimistic Load
             }
+            const box = document.getElementById('msg-container');
+box.scrollTop = box.scrollHeight;
         }
 
         async function loadAll() {
